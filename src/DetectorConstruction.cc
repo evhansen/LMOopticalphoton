@@ -146,11 +146,16 @@ void DetectorConstruction::DefineMaterials()
 
   G4int numentries = 3;
   G4double abslength[3] = {100*mm, 100*mm, 100*mm};
+  G4double LDabslength[3] = {1*mm, 1*mm, 1*mm};
+
   G4double worldabslength[3] = {100*mm, 100*mm, 100*mm};
   G4double rindex[3] = {1.44, 1.44, 1.44};
   G4double energies[3] = {2.0*eV, 3.0*eV, 4.0*eV};
   fLMOMPT->AddProperty("ABSLENGTH", energies, abslength, numentries);
   fLMOMPT->AddProperty("RINDEX", energies, rindex, numentries);
+  fLDMPT->AddProperty("RINDEX", energies, rindex, numentries);
+  fLDMPT->AddProperty("ABSLENGTH", energies, LDabslength, numentries);
+
   // fWorldMPT->AddProperty("ABSLENGTH",energies, worldabslength, numentries);
 
   fSurface = new G4OpticalSurface("Surface");
@@ -168,7 +173,7 @@ void DetectorConstruction::DefineMaterials()
 G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
 {
   // Geometry parameters
-  // fNofLayers = 10;
+  fNofLayers = 1;
   // G4double absoThickness = 10.*mm;
   // G4double gapThickness =  5.*mm;
   // G4double LightDetectorSizeXY  = 10.*cm;
@@ -276,7 +281,7 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
     = new G4LogicalVolume(
                  LightDetector,     // its solid
                  LightDetectorMaterial,  // its material
-                 "LightDetector");   // its name
+                 "LightDetectorLV");   // its name
 
   new G4PVPlacement(
                0,                // no rotation
@@ -299,10 +304,10 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
                fCheckOverlaps);  // checking overlaps
 
 
-  G4LogicalBorderSurface* surface1
-    = new G4LogicalBorderSurface("Surface", fLMO1, worldPV, fSurface);
-  G4OpticalSurface* opticalSurface1
-    = dynamic_cast<G4OpticalSurface*>(surface1->GetSurface(fLMO1, worldPV)->GetSurfaceProperty());
+  // G4LogicalBorderSurface* surface1
+  //   = new G4LogicalBorderSurface("Surface", fLMO1, worldPV, fSurface);
+  // G4OpticalSurface* opticalSurface1
+  //   = dynamic_cast<G4OpticalSurface*>(surface1->GetSurface(fLMO1, worldPV)->GetSurfaceProperty());
 
 
   //
@@ -332,7 +337,7 @@ void DetectorConstruction::ConstructSDandField()
   auto fLDSD
     = new LightDetectorSD("LightDetectorSD", "AbsorberHitsCollection", fNofLayers);
   G4SDManager::GetSDMpointer()->AddNewDetector(fLDSD);
-  SetSensitiveDetector("LightDetector",fLDSD);
+  SetSensitiveDetector("LightDetectorLV",fLDSD);
 
 }
 

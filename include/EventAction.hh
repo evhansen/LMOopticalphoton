@@ -55,7 +55,7 @@ private:
   // methods
   LightDetectorHitsCollection* GetHitsCollection(G4int hcID,
                                             const G4Event* event) const;
-  void PrintEventStatistics(G4double absoEdep, G4double absoTrackLength
+  void PrintEventStatistics(G4double absoEdep//, G4double absoTrackLength
                             // ,G4double gapEdep, G4double gapTrackLength
                           ) const;
 

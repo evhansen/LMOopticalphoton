@@ -24,7 +24,7 @@
 /LDsensitive/worldProperty RINDEX    0.000002 1.0 0.000008 1.0
 #/LDsensitive/worldProperty ABSLENGTH 0.000002 200*mm  0.000005 200*mm   0.000008 200*mm
 
-/LDsensitive/LDProperty ABSLENGTH 0.000002 1 0.0000003 1
+#/LDsensitive/LDProperty ABSLENGTH 0.000002 1 0.0000003 1
 
 /analysis/setFileName LMO_test
 
@@ -36,4 +36,4 @@
 
 
 # /run/printProgress 100
-#/run/beamOn 1
+/run/beamOn 10

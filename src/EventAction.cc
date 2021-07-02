@@ -70,6 +70,7 @@ EventAction::GetHitsCollection(G4int hcID,
     G4Exception("EventAction::GetHitsCollection()",
       "MyCode0003", FatalException, msg);
   }
+  G4cout << "   Retrieved Hit Collection " << G4endl;
 
   return hitsCollection;
 }
@@ -77,7 +78,7 @@ EventAction::GetHitsCollection(G4int hcID,
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void EventAction::PrintEventStatistics(
-                              G4double absoEdep, G4double absoTrackLength
+                              G4double absoEdep//, G4double absoTrackLength
                               // , G4double gapEdep, G4double gapTrackLength
                             ) const
 {
@@ -85,14 +86,10 @@ void EventAction::PrintEventStatistics(
   G4cout
      << "   Absorber: total energy: "
      << std::setw(7) << G4BestUnit(absoEdep, "Energy")
-     << "       total track length: "
-     << std::setw(7) << G4BestUnit(absoTrackLength, "Length")
-     << G4endl
-     // << "        Gap: total energy: "
-     // << std::setw(7) << G4BestUnit(gapEdep, "Energy")
      // << "       total track length: "
-     // << std::setw(7) << G4BestUnit(gapTrackLength, "Length")
+     // << std::setw(7) << G4BestUnit(absoTrackLength, "Length")
      << G4endl;
+
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -104,21 +101,29 @@ void EventAction::BeginOfEventAction(const G4Event* /*event*/)
 
 void EventAction::EndOfEventAction(const G4Event* event)
 {
+  G4cout << "  blah" << G4endl;
   // Get hits collections IDs (only once)
   if ( fAbsHCID == -1 ) {
     fAbsHCID
       = G4SDManager::GetSDMpointer()->GetCollectionID("AbsorberHitsCollection");
+
     // fGapHCID
     //   = G4SDManager::GetSDMpointer()->GetCollectionID("GapHitsCollection");
   }
-
+  G4cout << "   fAbsHCID " << fAbsHCID << G4endl;
   // Get hits collections
   auto absoHC = GetHitsCollection(fAbsHCID, event);
+  G4cout << "   Retrieved Hit Collection again " << G4endl;
   // auto gapHC = GetHitsCollection(fGapHCID, event);
 
 
   G4int nofHits = absoHC->entries();
   auto eventID = event->GetEventID();
+
+  G4cout
+     << "   Total Hits: "
+     << std::setw(7) << nofHits
+     << G4endl;
 
   for(int i=0; i<nofHits; i++){
 
@@ -133,15 +138,11 @@ void EventAction::EndOfEventAction(const G4Event* event)
 
     // fill histograms
     analysisManager->FillH1(0, absoHit->GetEdep());
-    // analysisManager->FillH1(1, gapHit->GetEdep());
-    analysisManager->FillH1(2, absoHit->GetTrackLength());
-    // analysisManager->FillH1(3, gapHit->GetTrackLength());
+    // analysisManager->FillH1(2, absoHit->GetTrackLength());
 
     // fill ntuple
     analysisManager->FillNtupleDColumn(0, absoHit->GetEdep());
-    // analysisManager->FillNtupleDColumn(1, gapHit->GetEdep());
-    analysisManager->FillNtupleDColumn(2, absoHit->GetTrackLength());
-    // analysisManager->FillNtupleDColumn(3, gapHit->GetTrackLength());
+    // analysisManager->FillNtupleDColumn(2, absoHit->GetTrackLength());
     analysisManager->AddNtupleRow();
 
     auto printModulo = G4RunManager::GetRunManager()->GetPrintProgress();
@@ -149,8 +150,8 @@ void EventAction::EndOfEventAction(const G4Event* event)
       G4cout << "---> End of event: " << eventID << G4endl;
 
       PrintEventStatistics(
-        absoHit->GetEdep(), absoHit->GetTrackLength()
-        // gapHit->GetEdep(), gapHit->GetTrackLength());
+        absoHit->GetEdep()
+        //, absoHit->GetTrackLength()
       );
     }
   }

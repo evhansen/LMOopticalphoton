@@ -33,6 +33,7 @@
 #include "G4ThreeVector.hh"
 #include "G4SDManager.hh"
 #include "G4ios.hh"
+#include "G4VProcess.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -57,6 +58,7 @@ LightDetectorSD::~LightDetectorSD()
 
 void LightDetectorSD::Initialize(G4HCofThisEvent* hce)
 {
+  G4cout << "-------->INITIALIZED ::: " << G4endl;
   // Create hits collection
   fHitsCollection
     = new LightDetectorHitsCollection(SensitiveDetectorName, collectionName[0]);
@@ -68,9 +70,9 @@ void LightDetectorSD::Initialize(G4HCofThisEvent* hce)
 
   // Create hits
   // fNofCells for cells + one more for total sums
-  for (G4int i=0; i<fNofCells+1; i++ ) {
-    fHitsCollection->insert(new LightDetectorHit());
-  }
+  // for (G4int i=0; i<fNofCells+1; i++ ) {
+  //   fHitsCollection->insert(new LightDetectorHit());
+  // }
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -80,36 +82,59 @@ G4bool LightDetectorSD::ProcessHits(G4Step* step,
 {
   // energy deposit
   auto edep = step->GetTotalEnergyDeposit();
+  G4cout << "-------->EDEP :::  " << edep << G4endl;
 
-  // step length
-  G4double stepLength = 0.;
-  if ( step->GetTrack()->GetDefinition()->GetPDGCharge() != 0. ) {
-    stepLength = step->GetStepLength();
-  }
+  if(edep == 0.)
+    return false;  // No edep so don't count as hit
 
-  if ( edep==0. && stepLength == 0. ) return false;
+
+  // // step length
+  // G4double stepLength = 0.;
+  // if ( step->GetTrack()->GetDefinition()->GetPDGCharge() != 0. ) {
+  //   stepLength = step->GetStepLength();
+  // }
+  //
+  // if (stepLength == 0. )
+  //   return false; // No step length so don't count as hit
+
+  G4StepPoint* thePrePoint = step->GetPreStepPoint();
+  G4StepPoint* thePostPoint = step->GetPostStepPoint();
 
   auto touchable = (step->GetPreStepPoint()->GetTouchable());
+  G4VPhysicalVolume* thePrePV = touchable->GetVolume();
+
+  G4ThreeVector pos = thePrePoint->GetPosition() + thePostPoint->GetPosition();
+  pos /= 2.;
+
 
   // Get LightDetector cell id
-  auto layerNumber = touchable->GetReplicaNumber(1);
-
-  // Get hit accounting data for this cell
-  auto hit = (*fHitsCollection)[layerNumber];
-  if ( ! hit ) {
-    G4ExceptionDescription msg;
-    msg << "Cannot access hit " << layerNumber;
-    G4Exception("LightDetectorSD::ProcessHits()",
-      "MyCode0004", FatalException, msg);
-  }
+  // auto layerNumber = touchable->GetReplicaNumber(1);
+  //
+  // // Get hit accounting data for this cell
+  // auto hit = (*fHitsCollection)[layerNumber];
+  // if ( ! hit ) {
+  //   G4ExceptionDescription msg;
+  //   msg << "Cannot access hit " << layerNumber;
+  //   G4Exception("LightDetectorSD::ProcessHits()",
+  //     "MyCode0004", FatalException, msg);
+  // }
 
   // Get hit for total accounting
   auto hitTotal
-    = (*fHitsCollection)[fHitsCollection->entries()-1];
+    = (*fHitsCollection)[fHitsCollection->entries()];
+
+  LightDetectorHit* OPhit = new LightDetectorHit(thePrePV);
+
+  OPhit->SetEdep(edep);
+  OPhit->SetPos(pos);
+
+  G4cout << "-------->GetEdep :::  " << OPhit->GetEdep() << G4endl;
+
+  fHitsCollection->insert(OPhit);
 
   // Add values
-  hit->Add(edep, stepLength);
-  hitTotal->Add(edep, stepLength);
+  // hit->Add(edep, stepLength);
+  // hitTotal->Add(edep, stepLength);
 
   return true;
 }
@@ -118,6 +143,7 @@ G4bool LightDetectorSD::ProcessHits(G4Step* step,
 
 void LightDetectorSD::EndOfEvent(G4HCofThisEvent*)
 {
+  G4cout << "-------->endofevent" << G4endl;
   if ( verboseLevel>1 ) {
      auto nofHits = fHitsCollection->entries();
      G4cout

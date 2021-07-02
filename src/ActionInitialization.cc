@@ -55,8 +55,9 @@ void ActionInitialization::BuildForMaster() const
 void ActionInitialization::Build() const
 {
   SetUserAction(new PrimaryGeneratorAction(fDetector));
-  SetUserAction(new RunAction);
+
   SetUserAction(new EventAction);
+  SetUserAction(new RunAction);
   // SetUserAction(new SteppingAction());
   // SetUserAction(new TrackingAction);
 }
