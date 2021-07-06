@@ -64,12 +64,15 @@ class LightDetectorHit : public G4VHit
     virtual void Print();
 
     // methods to handle data
-    void Add(G4double de, G4double dl);
+    void Add(G4double de);
 
     // get methods
     G4double GetEdep() const;
     inline void SetEdep(G4double de) { fEdep = de; }
     inline void AddEdep(G4double de) { fEdep += de; }
+
+    G4double GetPhysVolNum() const;
+    inline void SetPhysVolNum(G4int plv) { fPhysVolNum = plv; }
 
     inline void SetPos(G4ThreeVector xyz) { fPos = xyz; }
     inline const G4VPhysicalVolume* GetPhysV() { return fPhysVol; }
@@ -77,6 +80,7 @@ class LightDetectorHit : public G4VHit
 
   private:
     G4double fEdep;        ///< Energy deposit in the sensitive volume
+    G4int fPhysVolNum;
     G4ThreeVector fPos;
     const G4VPhysicalVolume* fPhysVol;
     // G4double fTrackLength; ///< Track length in the  sensitive volume
@@ -108,7 +112,7 @@ inline void LightDetectorHit::operator delete(void *hit)
   LightDetectorHitAllocator->FreeSingle((LightDetectorHit*) hit);
 }
 
-inline void LightDetectorHit::Add(G4double de, G4double dl) {
+inline void LightDetectorHit::Add(G4double de) {
   fEdep += de;
   // fTrackLength += dl;
 }
@@ -116,6 +120,13 @@ inline void LightDetectorHit::Add(G4double de, G4double dl) {
 inline G4double LightDetectorHit::GetEdep() const {
   return fEdep;
 }
+
+inline G4double LightDetectorHit::GetPhysVolNum() const {
+  return fPhysVolNum;
+}
+// inline G4double LightDetectorHit::GetPos() const {
+//   return fEdep;
+// }
 
 // inline G4double LightDetectorHit::GetTrackLength() const {
 //   return fTrackLength;

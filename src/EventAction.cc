@@ -70,7 +70,7 @@ EventAction::GetHitsCollection(G4int hcID,
     G4Exception("EventAction::GetHitsCollection()",
       "MyCode0003", FatalException, msg);
   }
-  G4cout << "   Retrieved Hit Collection " << G4endl;
+
 
   return hitsCollection;
 }
@@ -101,7 +101,7 @@ void EventAction::BeginOfEventAction(const G4Event* /*event*/)
 
 void EventAction::EndOfEventAction(const G4Event* event)
 {
-  G4cout << "  blah" << G4endl;
+
   // Get hits collections IDs (only once)
   if ( fAbsHCID == -1 ) {
     fAbsHCID
@@ -110,20 +110,15 @@ void EventAction::EndOfEventAction(const G4Event* event)
     // fGapHCID
     //   = G4SDManager::GetSDMpointer()->GetCollectionID("GapHitsCollection");
   }
-  G4cout << "   fAbsHCID " << fAbsHCID << G4endl;
+
   // Get hits collections
   auto absoHC = GetHitsCollection(fAbsHCID, event);
-  G4cout << "   Retrieved Hit Collection again " << G4endl;
+
   // auto gapHC = GetHitsCollection(fGapHCID, event);
 
 
   G4int nofHits = absoHC->entries();
   auto eventID = event->GetEventID();
-
-  G4cout
-     << "   Total Hits: "
-     << std::setw(7) << nofHits
-     << G4endl;
 
   for(int i=0; i<nofHits; i++){
 
@@ -137,23 +132,24 @@ void EventAction::EndOfEventAction(const G4Event* event)
     auto analysisManager = G4AnalysisManager::Instance();
 
     // fill histograms
-    analysisManager->FillH1(0, absoHit->GetEdep());
+    // analysisManager->FillH1(0, absoHit->GetEdep());
     // analysisManager->FillH1(2, absoHit->GetTrackLength());
 
     // fill ntuple
     analysisManager->FillNtupleDColumn(0, absoHit->GetEdep());
+    analysisManager->FillNtupleIColumn(1, absoHit->GetPhysVolNum());
+    // analysisManager->FillNtupleDColumn(2, absoHit->GetPosition()->GetX());
+
     // analysisManager->FillNtupleDColumn(2, absoHit->GetTrackLength());
     analysisManager->AddNtupleRow();
 
-    auto printModulo = G4RunManager::GetRunManager()->GetPrintProgress();
-    if ( ( printModulo > 0 ) && ( eventID % printModulo == 0 ) ) {
-      G4cout << "---> End of event: " << eventID << G4endl;
-
-      PrintEventStatistics(
-        absoHit->GetEdep()
-        //, absoHit->GetTrackLength()
-      );
-    }
+    // auto printModulo = G4RunManager::GetRunManager()->GetPrintProgress();
+    // if ( ( printModulo > 0 ) && ( eventID % printModulo == 0 ) ) {
+    //   PrintEventStatistics(
+    //     absoHit->GetEdep()
+    //     //, absoHit->GetTrackLength()
+      // );
+    // }
   }
 }
 

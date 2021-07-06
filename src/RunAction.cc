@@ -61,18 +61,17 @@ RunAction::RunAction()
   //
 
   // Creating histograms
-  analysisManager->CreateH1("Eabs","Edep in absorber", 100, 0., 10*eV);
-  // analysisManager->CreateH1("Egap","Edep in gap", 100, 0., 100*MeV);
-  analysisManager->CreateH1("Labs","trackL in absorber", 100, 0., 1*m);
-  // analysisManager->CreateH1("Lgap","trackL in gap", 100, 0., 50*cm);
+  analysisManager->CreateH1("Eabs","Edep in absorber", 100, 0., 5*eV);
+  analysisManager->CreateH1("PhysVolNum","Which LD is hit", 30, 0., 30);
+  // analysisManager->CreateH1("Xabs","X location in absorber",)
+  // analysisManager->CreateH1("Labs","trackL in absorber", 100, 0., 1*m);
 
   // Creating ntuple
   //
-  analysisManager->CreateNtuple("", "Edep and TrackL");
-  analysisManager->CreateNtupleDColumn("Eabs");
-  // analysisManager->CreateNtupleDColumn("Egap");
-  analysisManager->CreateNtupleDColumn("Labs");
-  // analysisManager->CreateNtupleDColumn("Lgap");
+  analysisManager->CreateNtuple("LDHit", "Edep and Position");
+  analysisManager->CreateNtupleDColumn("Eabs"); // 0
+  analysisManager->CreateNtupleIColumn("PhysVolNum"); // 1
+  analysisManager->CreateNtupleDColumn("Pos"); // 2
   analysisManager->FinishNtuple();
 }
 
@@ -106,7 +105,7 @@ void RunAction::EndOfRunAction(const G4Run* /*run*/)
   // print histogram statistics
   //
   auto analysisManager = G4AnalysisManager::Instance();
-  if ( analysisManager->GetH1(1) ) {
+  if ( analysisManager->GetH1(0) ) {
     G4cout << G4endl << " ----> print histograms statistic ";
     if(isMaster) {
       G4cout << "for the entire run " << G4endl << G4endl;
@@ -117,8 +116,8 @@ void RunAction::EndOfRunAction(const G4Run* /*run*/)
 
     G4cout << " EAbs : mean = "
        << G4BestUnit(analysisManager->GetH1(0)->mean(), "Energy")
-       << " rms = "
-       << G4BestUnit(analysisManager->GetH1(0)->rms(),  "Energy") << G4endl;
+       << " count = "
+       << analysisManager->GetH1(0)->entries() << G4endl;
 
     // G4cout << " LAbs : mean = "
     //   << G4BestUnit(analysisManager->GetH1(2)->mean(), "Length")

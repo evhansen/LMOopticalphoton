@@ -44,7 +44,8 @@ LightDetectorHit::LightDetectorHit()
  : G4VHit(),
    fEdep(0.),
    // fTrackLength(0.),
-   fPhysVol(nullptr)
+   fPhysVol(nullptr),
+   fPhysVolNum()
 {}
 
   //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -65,7 +66,7 @@ LightDetectorHit::LightDetectorHit(const LightDetectorHit& right)
   fEdep        = right.fEdep;
   // fTrackLength = right.fTrackLength;
   fPhysVol     = right.fPhysVol;
-  G4cout<<"hit hit hit"<<G4endl;
+  fPhysVolNum  = right.fPhysVolNum;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -75,8 +76,7 @@ const LightDetectorHit& LightDetectorHit::operator=(const LightDetectorHit& righ
   fEdep        = right.fEdep;
   // fTrackLength = right.fTrackLength;
   fPhysVol     = right.fPhysVol;
-
-  G4cout<<"hit hit hit equals"<<G4endl;
+  fPhysVolNum  = right.fPhysVolNum;
 
   return *this;
 }
@@ -95,6 +95,10 @@ void LightDetectorHit::Print()
   G4cout
      << "Edep: "
      << std::setw(7) << G4BestUnit(fEdep,"Energy")
+     << "PhysVol: "
+     << std::setw(7) << fPhysVol
+     << "PhysVolNum: "
+     << std::setw(7) << fPhysVolNum
      // << " track length: "
      // << std::setw(7) << G4BestUnit( fTrackLength,"Length")
      << G4endl;

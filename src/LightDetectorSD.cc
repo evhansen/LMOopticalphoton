@@ -58,7 +58,6 @@ LightDetectorSD::~LightDetectorSD()
 
 void LightDetectorSD::Initialize(G4HCofThisEvent* hce)
 {
-  G4cout << "-------->INITIALIZED ::: " << G4endl;
   // Create hits collection
   fHitsCollection
     = new LightDetectorHitsCollection(SensitiveDetectorName, collectionName[0]);
@@ -82,7 +81,6 @@ G4bool LightDetectorSD::ProcessHits(G4Step* step,
 {
   // energy deposit
   auto edep = step->GetTotalEnergyDeposit();
-  G4cout << "-------->EDEP :::  " << edep << G4endl;
 
   if(edep == 0.)
     return false;  // No edep so don't count as hit
@@ -102,6 +100,10 @@ G4bool LightDetectorSD::ProcessHits(G4Step* step,
 
   auto touchable = (step->GetPreStepPoint()->GetTouchable());
   G4VPhysicalVolume* thePrePV = touchable->GetVolume();
+  G4int copyNumber = touchable->GetCopyNumber();
+  // G4cout<<"==> logical volume-> "<< thePrePV->GetLogicalVolume()->GetName() <<G4endl;
+  // G4cout<<"==> which copy -> "<< touchable->GetCopyNumber() <<G4endl;
+
 
   G4ThreeVector pos = thePrePoint->GetPosition() + thePostPoint->GetPosition();
   pos /= 2.;
@@ -126,9 +128,10 @@ G4bool LightDetectorSD::ProcessHits(G4Step* step,
   LightDetectorHit* OPhit = new LightDetectorHit(thePrePV);
 
   OPhit->SetEdep(edep);
+  OPhit->SetPhysVolNum(copyNumber);
   OPhit->SetPos(pos);
+  // G4cout<<"pos-> "<<pos<<G4endl;
 
-  G4cout << "-------->GetEdep :::  " << OPhit->GetEdep() << G4endl;
 
   fHitsCollection->insert(OPhit);
 
@@ -143,7 +146,6 @@ G4bool LightDetectorSD::ProcessHits(G4Step* step,
 
 void LightDetectorSD::EndOfEvent(G4HCofThisEvent*)
 {
-  G4cout << "-------->endofevent" << G4endl;
   if ( verboseLevel>1 ) {
      auto nofHits = fHitsCollection->entries();
      G4cout
