@@ -104,7 +104,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   if(fRandomInLMO1)
   {
 	  G4double Rmax = fDetector->GetLMOXSize() ;
-	  G4double SepDist = fDetector->GetLMOSep() ;
+	  // G4double SepDist = fDetector->GetLMOSep() ;
 	  G4double R2 = Rmax*2.0;
 	  G4double ux = G4UniformRand()*R2 - Rmax; //+ 0.5*SepDist ;
 	  G4double uy = G4UniformRand()*R2 - Rmax; //+ 0.5*SepDist ;

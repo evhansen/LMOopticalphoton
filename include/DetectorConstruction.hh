@@ -65,7 +65,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction
     G4double	GetLMOSize()	{ return LMO_halflength; }
     G4double 	GetLMOXSize() 	{ return fLMO_xy; }
     G4double	GetLMOSep()	{ return SepDist; }
-    G4double	GetLDSep()	{ return LDSepDist; }
+    G4double	GetLDSep()	{ return LDSepDistTop; }
 
     G4OpticalSurface* GetSurface(void) { return fSurface; }
 
@@ -132,7 +132,11 @@ class DetectorConstruction : public G4VUserDetectorConstruction
     G4double LMO_halflength;
     G4double LD_halfwidth;
     G4double SepDist; // Separation distance between crystals, face-to-face
-    G4double LDSepDist; // Separation distance between crystal & LD face-to-face
+    G4double SepDistZ; // Separation distance between crystals, face-to-face, z-dir
+    G4double SmallSepDist; // Smaller separation distance between crystals, face-to-face
+    G4double LDSepDistTop; // Separation distance between crystal & TOP LD face-to-face
+    G4double LDSepDistBot; // Separation distance between crystal & TOP LD face-to-face
+
     G4double fLMO_xy;
     G4double fLD_xy;
     G4double fLD_z;

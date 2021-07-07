@@ -24,9 +24,26 @@
 /vis/viewer/set/autoRefresh true
 /vis/viewer/refresh
 /vis/verbose warnings
-/vis/viewer/set/viewpointThetaPhi 180 0
-/vis/viewer/refresh
+/control/execute LDsensitive.mac
+/tracking/verbose 2
+/control/cout/ignoreThreadsExcept 0
+/run/initialize
+/LDsensitive/LMOProperty RINDEX 0.000002 1.44 0.000003 1.44 0.000004 1.44
+/LDsensitive/LMOProperty ABSLENGTH 0.000002 100*mm 0.000003 100*mm 0.000004 100*mm
+/LDsensitive/worldProperty RINDEX 0.000002 1.0 0.000008 1.0
+/LDsensitive/worldProperty ABSLENGTH 0.000002 200*mm 0.000005 200*mm 0.000008 200*mm
+/analysis/setFileName LMO_withTowerDimensions
+/gun/particle opticalphoton
+/gun/energy 2.6 eV
+/LDsensitive/gun/randomInLMO1 true
+/LDsensitive/gun/randomDirection true
 /vis/viewer/set/upVector 0 0 1
 /vis/viewer/refresh
 /vis/viewer/set/viewpointThetaPhi 70 40
 /vis/viewer/refresh
+/vis/viewer/set/hiddenEdge 1
+/vis/viewer/refresh
+/random/setSeeds 1 10
+/run/printProgress 10000
+/run/beamOn 50
+/vis/scene/notifyHandlers scene-0
