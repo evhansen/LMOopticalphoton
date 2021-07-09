@@ -124,6 +124,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction
     G4Material* LMOMaterial;
     G4Material* LightDetectorMaterial;
     G4LogicalVolume* worldLV;
+    G4LogicalVolume* fLMO_LV_primary;
     G4LogicalVolume* fLMO_LV;
     G4LogicalVolume* LightDetectorLV;
 

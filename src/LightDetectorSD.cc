@@ -81,19 +81,18 @@ G4bool LightDetectorSD::ProcessHits(G4Step* step,
 {
   // energy deposit
   auto edep = step->GetTotalEnergyDeposit();
-
   if(edep == 0.)
     return false;  // No edep so don't count as hit
 
-
-  // // step length
+  // step length
   // G4double stepLength = 0.;
   // if ( step->GetTrack()->GetDefinition()->GetPDGCharge() != 0. ) {
   //   stepLength = step->GetStepLength();
   // }
-  //
   // if (stepLength == 0. )
   //   return false; // No step length so don't count as hit
+
+
 
   G4StepPoint* thePrePoint = step->GetPreStepPoint();
   G4StepPoint* thePostPoint = step->GetPostStepPoint();

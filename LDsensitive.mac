@@ -7,7 +7,7 @@
 #/tracking/verbose 2
 #/run/verbose 2
 #/process/optical/verbose 2
-/control/cout/ignoreThreadsExcept 0
+#/control/cout/ignoreThreadsExcept 0
 
 #/run/numberOfThreads 4
 #/control/cout/ignoreThreadsExcept 0
@@ -27,7 +27,7 @@
 #/LDsensitive/LDProperty RINDEX 0.000002 1.97 0.000003 1.97 0.000004 1.97
 #/LDsensitive/LDProperty ABSLENGTH 0.000002 .5 0.0000003 .5
 
-/analysis/setFileName LMO_withTowerDimensions
+/analysis/setFileName LMO_test
 
 /gun/particle opticalphoton
 /gun/energy 2.6 eV
