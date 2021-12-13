@@ -55,10 +55,26 @@
 #include "G4PhysicalConstants.hh"
 #include "G4SystemOfUnits.hh"
 
+
+
+#include <stdio.h>
+
+
+
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 G4ThreadLocal
 // G4GlobalMagFieldMessenger* DetectorConstruction::fMagFieldMessenger = 0;
+
+
+
+// Aux Functions (darn external macros are impossible to figure out)
+char readExtFile(const char* filename);
+
+
+
+
+
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -138,12 +154,28 @@ void DetectorConstruction::DefineMaterials()
   z = 14.0;
   G4Material* Silicon = new G4Material(name="Silicon"   , z , a, density );
 
+  /*
+  G4NistManager* manager = G4NistManager::Instance();
+  manager->SetVerbose(1);
+
+  //density = 2.7*g/cm3; // note at 1 atm
+  //a = 26.982*g/mole;
+  //z = 13.0;
+  G4Material* Aluminium = new G4Material(name="Aluminium",z,a,density);
+  
+  //G4bool isotope = false;
+  //G4Material* Aluminium = manager->FindOrBuildMaterial("G4_Al",isotope);
+  // Am going to use the NIST DB
+  //  Can check available elements and material via 
+  //  /material/nist/printElements,listMaterials
+  */
+
   // MATERIAL PROPERTIES TABLES
   fLMOMPT    = new G4MaterialPropertiesTable();
   fLDMPT    = new G4MaterialPropertiesTable();
   fWorldMPT   = new G4MaterialPropertiesTable();
   fSurfaceMPT = new G4MaterialPropertiesTable();
-
+ 
   G4int numentries = 3;
   G4double abslength[3] = {100*mm, 100*mm, 100*mm};
   G4double rindex[3] = {1.44, 1.44, 1.44};
@@ -159,6 +191,36 @@ void DetectorConstruction::DefineMaterials()
 
   fLDMPT->AddProperty("RINDEX", energies, LDrindex, numentries);
   fLDMPT->AddProperty("ABSLENGTH", energies, LDabslength, numentries);
+ 
+  // *
+  // TODO: figure out if we actually need to init materials here? 
+  //  Seems like probably not
+  // *
+
+  /*
+  // we want to keep the properties from the NIST DB
+  //G4MaterialPropertiesTable* fARMPT = Aluminium->GetMaterialPropertiesTable();
+  G4MaterialPropertiesTable* fARMPT = new G4MaterialPropertiesTable();
+  
+  G4double AlRR[3] = {1.366,0.52135,0.28003};
+  G4double AlIR[3] = {7.4052,5.0008,3.7081};
+  //G4double AlAb[3] = {};
+  //G4double Ref[3] = {0.98,0.98,0.98};
+  // 1 eV ~ 1.2398\times 10^(-6) m ~ 1 (micro)m
+  // 2 eV ~ 6.1992\times 10^(-7) m ~ 0.06 (micro)m
+  // 3 eV ~ 4.1328\times 10^(-7) m ~ 0.04 (micro)m
+  // 4 ev ~ 3.0996\times 10^(-7) m ~ 0.03 (micro)m
+
+  //fARMPT->AddProperty("REFLECTIVITY",energies,Ref,numentries);
+  
+  //fARMPT->AddProperty("ABSLENGTH",energies,AlAb,numentries);
+  fARMPT->AddProperty("REALRINDEX",energies,AlRR,numentries);
+  fARMPT->AddProperty("IMAGINARYRINDEX",energies,AlIR,numentries);
+  // add in what we need
+
+  Aluminium->SetMaterialPropertiesTable(fARMPT);
+  // add the table with changes 
+  */
 
   // fWorldMPT->AddProperty("ABSLENGTH",energies, worldabslength, numentries);
 
@@ -226,7 +288,43 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
   LightDetectorMaterial->SetMaterialPropertiesTable(fLDMPT);
   LMOMaterial->SetMaterialPropertiesTable(fLMOMPT);
 
-  if ( ! WorldMaterial || ! LightDetectorMaterial || ! LMOMaterial ) {
+  // *
+  // Since modifying the MPT of G4_Al causes a core dump, just make a new MPT
+  //  and assign such.
+  // * 
+  G4bool isotope = false;
+  G4Material* ARMaterial = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al",isotope);
+
+  G4MaterialPropertiesTable* fARMPT = new G4MaterialPropertiesTable();
+  G4double energies[3] = {2*eV,3*eV,4*eV};
+  G4double AlRR[3] = {1.366,0.52135,0.28003};
+  G4double AlIR[3] = {7.4052,5.0008,3.7081};
+  G4int numentries = 3;
+  // 1 eV ~ 1.2398\times 10^(-6) m ~ 1 (micro)m
+  // 2 eV ~ 6.1992\times 10^(-7) m ~ 0.06 (micro)m
+  // 3 eV ~ 4.1328\times 10^(-7) m ~ 0.04 (micro)m
+  // 4 ev ~ 3.0996\times 10^(-7) m ~ 0.03 (micro)m
+  fARMPT->AddProperty("REALRINDEX",energies,AlRR,numentries);
+  fARMPT->AddProperty("IMAGINARYRINDEX",energies,AlIR,numentries);
+  ARMaterial->SetMaterialPropertiesTable(fARMPT);
+  
+
+  /* MPT modification that doesn't work
+  G4MaterialPropertiesTable* fARMPT = ARMaterial->GetMaterialPropertiesTable();
+  G4double energies[3] = {2*eV,3*eV,4*eV};
+  G4double AlRR[3] = {1.366,0.52135,0.28003};
+  G4double AlIR[3] = {7.4052,5.0008,3.7081};
+  G4int numentries = 3;
+  // 1 eV ~ 1.2398\times 10^(-6) m ~ 1 (micro)m
+  // 2 eV ~ 6.1992\times 10^(-7) m ~ 0.06 (micro)m
+  // 3 eV ~ 4.1328\times 10^(-7) m ~ 0.04 (micro)m
+  // 4 ev ~ 3.0996\times 10^(-7) m ~ 0.03 (micro)m
+  fARMPT->AddProperty("REALRINDEX",energies,AlRR,numentries);
+  fARMPT->AddProperty("IMAGINARYRINDEX",energies,AlIR,numentries);
+  ARMaterial->SetMaterialPropertiesTable(fARMPT);
+  */
+
+  if ( ! WorldMaterial || ! LightDetectorMaterial || ! LMOMaterial || !ARMaterial ) {
     G4ExceptionDescription msg;
     msg << "Cannot retrieve materials already defined.";
     G4Exception("B4DetectorConstruction::DefineVolumes()",
@@ -268,7 +366,13 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
     = new G4LogicalVolume(
                 LMO_box,         // its solid
                 LMOMaterial,    // its material
-                "LMO_primary");          // its name
+  		"LMO_primary");          // its name
+
+  //fLMO_LV_primary->SetVisAttributes(G4Colour::Yellow());
+  G4VisAttributes* LMOVA = new G4VisAttributes();
+  LMOVA->SetColor(1.0,1.0,0.0,0.2);
+  LMOVA->SetForceSolid(true);
+  fLMO_LV_primary->SetVisAttributes(LMOVA);
 
   fLMO_LV
     = new G4LogicalVolume(
@@ -276,8 +380,9 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
                 LMOMaterial,    // its material
                 "LMO");          // its name
 
+  //fLMO_LV->SetVisAttributes(G4Colour::Red());
 
-  G4PVPlacement* fLMO1 =
+  G4VPhysicalVolume* fLMO1 =
     new G4PVPlacement(
                 0,                // no rotation
                 G4ThreeVector(),  // place off center eventually
@@ -288,300 +393,119 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
                 101,                // copy number
                 fCheckOverlaps);  // checking overlaps
 
-  G4PVPlacement* fLMO2 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(0,-fLMO_C2C_inTower,0),
-                fLMO_LV,          // its logical volume
-                "LMO2",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                102,                // copy number
-                fCheckOverlaps);  // checking overlaps
+  // *
+  // Setting up the necessary rotations for surrounding physical volumes (to LMO)
+  // *
+  G4RotationMatrix* t1 = new G4RotationMatrix();
+  t1->rotateY(90.*deg);
+  t1->rotateX(90.*deg);
 
-  G4PVPlacement* fLMO3 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(fLMO_C2C_inTower,0,0),
-                fLMO_LV,          // its logical volume
-                "LMO3",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                103,                // copy number
-                fCheckOverlaps);  // checking overlaps
+  G4RotationMatrix* p1 = new G4RotationMatrix();
+  p1->rotateY(90.*deg);
+  p1->rotateZ(90.*deg);
 
-  G4PVPlacement* fLMO4 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(0,fLMO_C2C_diffTower,0),  // place off center eventually
-                fLMO_LV,          // its logical volume
-                "LMO4",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                104,                // copy number
-                fCheckOverlaps);  // checking overlaps
+  // *
+  // Interim Vacuum (between LMO and LD)
+  // *
+  G4double IVT = 2.5*mm; // Interim Vacuum Thickness
 
-  G4PVPlacement* fLMO5 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(-fLMO_C2C_diffTower,0,0),
-                fLMO_LV,          // its logical volume
-                "LMO5",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                105,                // copy number
-                fCheckOverlaps);  // checking overlaps
+  // Overlap
+  G4double LMOOL = 0.5*mm;
+  G4double LDOL = 2.25*mm; 
 
-  G4PVPlacement* fLMO6 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(-fLMO_C2C_diffTower,-fLMO_C2C_inTower,0),
-                fLMO_LV,          // its logical volume
-                "LMO6",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                106,                // copy number
-                fCheckOverlaps);  // checking overlaps
+  IVT = 1.25*mm-0.125*mm-0.195*mm-0.055*mm;
 
+  // Staggering to find accurate positions by brute force
+  G4double IVTS = 0.75*mm+0.125*mm+0.25*mm; // (IVTS \in [0,IVT] for (IVT \in [0,2])
 
-  G4PVPlacement* fLMO7 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(fLMO_C2C_inTower,-fLMO_C2C_inTower,0),  // place off center eventually
-                fLMO_LV,          // its logical volume
-                "LMO7",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                107,                // copy number
-                fCheckOverlaps);  // checking overlaps
+  auto InterimVacuum
+    = new G4Box("InterimVacuum",     // its name
+                 fLD_xy, fLD_xy, IVT); // its size
 
-  G4PVPlacement* fLMO8 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(fLMO_C2C_inTower,fLMO_C2C_diffTower,0),
-                fLMO_LV,          // its logical volume
-                "LMO8",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                108,                // copy number
-                fCheckOverlaps);  // checking overlaps
+  G4LogicalVolume* IVLV
+    = new G4LogicalVolume(
+                 InterimVacuum,     // its solid
+                 WorldMaterial,  // its material
+                 "InterimVacuumLV");   // its name
 
-  G4PVPlacement* fLMO9 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(-fLMO_C2C_diffTower,fLMO_C2C_diffTower,0),
-                fLMO_LV,          // its logical volume
-                "LMO9",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                109,                // copy number
-                fCheckOverlaps);  // checking overlaps
+  //G4VisAttributes* IVVA = new G4VisAttributes();
+  //IVVA->SetColor(0.0,0.0,0.0,5.0);
+  //IVVA->SetForceSolid(true);
+  //IVLV->SetVisAttributes(IVVA);
+
+  G4VPhysicalVolume* IV1 = new G4PVPlacement(
+               0,                // no rotation
+               G4ThreeVector(0,0,(fLMO_C2C_inTower)*(0.5)-IVTS),  // at (0,0,0) 
+	       IVLV,          // its logical volume
+               "IV1T",    // its name
+               worldLV,          // its mother  volume
+               false,            // no boolean operation
+               20,                // copy number
+               fCheckOverlaps);  // checking overlaps
+
+  G4VPhysicalVolume* IV2 = new G4PVPlacement(
+               0,                // no rotation 
+               G4ThreeVector(0,0,(-fLMO_C2C_inTower)*(0.5)+IVTS),  // at (0,0,0)
+	       IVLV,          // its logical volume
+               "IV1B",    // its name
+               worldLV,          // its mother  volume
+               false,            // no boolean operation
+               21,                // copy number
+               fCheckOverlaps);  // checking overlaps
 
 
-  G4PVPlacement* fLMO10 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(0,0,fLMO_UpperRowZ),  // place off center eventually
-                fLMO_LV,          // its logical volume
-                "LMO10",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                110,                // copy number
-                fCheckOverlaps);  // checking overlaps
+  G4VPhysicalVolume* IV3 = new G4PVPlacement(
+              t1,                // 
+              G4ThreeVector(0,(-fLMO_C2C_inTower)*(0.5)+IVTS,0),  // at (0,0,0)
+              IVLV,          // its logical volume
+              "IV2T",    // its name
+              worldLV,          // its mother  volume
+              false,            // no boolean operation
+              22,                // copy number
+              fCheckOverlaps);  // checking overlaps
 
-  G4PVPlacement* fLMO11 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(0,-fLMO_C2C_inTower,fLMO_UpperRowZ),
-                fLMO_LV,          // its logical volume
-                "LMO11",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                111,                // copy number
-                fCheckOverlaps);  // checking overlaps
+  G4VPhysicalVolume* IV4 = new G4PVPlacement(
+              t1,                // 
+              G4ThreeVector(0,(fLMO_C2C_inTower)*(0.5)-IVTS,0),  // at (0,0,0)
+              IVLV,          // its logical volume
+              "IV2B",    // its name
+              worldLV,          // its mother  volume
+              false,            // no boolean operation
+              23,                // copy number
+              fCheckOverlaps);  // checking overlaps
+ 
+  G4VPhysicalVolume* IV5 = new G4PVPlacement(
+               p1,                // no rotation
+               G4ThreeVector((-fLMO_C2C_inTower)*(0.5)+IVTS,0,0),  // at (0,0,0)
+               IVLV,          // its logical volume
+               "IV3T",    // its name
+               worldLV,          // its mother  volume
+               false,            // no boolean operation
+               24,                // copy number
+               fCheckOverlaps);  // checking overlaps
 
-  G4PVPlacement* fLMO12 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(fLMO_C2C_inTower,0,fLMO_UpperRowZ),
-                fLMO_LV,          // its logical volume
-                "LMO12",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                112,                // copy number
-                fCheckOverlaps);  // checking overlaps
+  G4VPhysicalVolume* IV6 = new G4PVPlacement(
+               p1,                // no rotation
+               G4ThreeVector((fLMO_C2C_inTower)*(0.5)-IVTS,0,0),  // at (0,0,0)
+               IVLV,          // its logical volume
+               "IV3B",    // its name
+               worldLV,          // its mother  volume
+               false,            // no boolean operation
+               25,                // copy number
+               fCheckOverlaps);  // checking overlaps
 
-  G4PVPlacement* fLMO13 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(0,fLMO_C2C_diffTower,fLMO_UpperRowZ),  // place off center eventually
-                fLMO_LV,          // its logical volume
-                "LMO13",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                113,                // copy number
-                fCheckOverlaps);  // checking overlaps
+  // *
+  // TODO: logical volumes for all individual light detector and
+  //  aluminium reflector instances so that they can colour code
+  //  their copy numbers?
+  // *
 
-  G4PVPlacement* fLMO14 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(-fLMO_C2C_diffTower,0,fLMO_UpperRowZ),
-                fLMO_LV,          // its logical volume
-                "LMO14",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                114,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-  G4PVPlacement* fLMO15 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(-fLMO_C2C_diffTower,-fLMO_C2C_inTower,fLMO_UpperRowZ),
-                fLMO_LV,          // its logical volume
-                "LMO15",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                115,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-
-  G4PVPlacement* fLMO16 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(fLMO_C2C_inTower,-fLMO_C2C_inTower,fLMO_UpperRowZ),  // place off center eventually
-                fLMO_LV,          // its logical volume
-                "LMO16",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                116,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-  G4PVPlacement* fLMO17 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(fLMO_C2C_inTower,fLMO_C2C_diffTower,fLMO_UpperRowZ),
-                fLMO_LV,          // its logical volume
-                "LMO17",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                117,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-  G4PVPlacement* fLMO18 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(-fLMO_C2C_diffTower,fLMO_C2C_diffTower,fLMO_UpperRowZ),
-                fLMO_LV,          // its logical volume
-                "LMO18",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                118,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-
-
-  G4PVPlacement* fLMO19 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(0,0,-fLMO_UpperRowZ),  // place off center eventually
-                fLMO_LV,          // its logical volume
-                "LMO19",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                119,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-  G4PVPlacement* fLMO20 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(0,-fLMO_C2C_inTower,-fLMO_UpperRowZ),
-                fLMO_LV,          // its logical volume
-                "LMO20",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                120,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-  G4PVPlacement* fLMO21 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(fLMO_C2C_inTower,0,-fLMO_UpperRowZ),
-                fLMO_LV,          // its logical volume
-                "LMO21",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                121,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-  G4PVPlacement* fLMO22 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(0,fLMO_C2C_diffTower,-fLMO_UpperRowZ),  // place off center eventually
-                fLMO_LV,          // its logical volume
-                "LMO22",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                122,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-  G4PVPlacement* fLMO23 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(-fLMO_C2C_diffTower,0,-fLMO_UpperRowZ),
-                fLMO_LV,          // its logical volume
-                "LMO23",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                123,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-  G4PVPlacement* fLMO24 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(-fLMO_C2C_diffTower,-fLMO_C2C_inTower,-fLMO_UpperRowZ),
-                fLMO_LV,          // its logical volume
-                "LMO24",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                124,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-
-  G4PVPlacement* fLMO25 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(fLMO_C2C_inTower,-fLMO_C2C_inTower,-fLMO_UpperRowZ),  // place off center eventually
-                fLMO_LV,          // its logical volume
-                "LMO25",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                125,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-  G4PVPlacement* fLMO26 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(fLMO_C2C_inTower,fLMO_C2C_diffTower,-fLMO_UpperRowZ),
-                fLMO_LV,          // its logical volume
-                "LMO26",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                126,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-  G4PVPlacement* fLMO27 =
-    new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(-fLMO_C2C_diffTower,fLMO_C2C_diffTower,-fLMO_UpperRowZ),
-                fLMO_LV,          // its logical volume
-                "LMO27",          // its name
-                worldLV,                // its mother  volume
-                false,            // no boolean operation
-                127,                // copy number
-                fCheckOverlaps);  // checking overlaps
-  //
+  // *
   // LightDetector
-  //
+  // *
+  
+  //G4double excess = 1.5*mm;
+ 
   auto LightDetector
     = new G4Box("LightDetector",     // its name
                  fLD_xy, fLD_xy, fLD_z); // its size
@@ -592,20 +516,33 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
                  LightDetectorMaterial,  // its material
                  "LightDetectorLV");   // its name
 
-  new G4PVPlacement(
+  //G4VisAttributes* LDVA = new G4VisAttributes(G4Colour::Blue());
+  //LDVA->SetForceLineSegmentsPerCircle(4);
+  
+  //LightDetectorLV->SetVisAttributes(G4Colour::Blue());
+  
+  //G4VisAttributes* LDVA = new G4VisAttributes();
+  //LDVA->SetColor(0.0,0.0,1.0,1.0);
+  //LDVA->SetForceLineSegmentsPerCircle(4);
+  //LightDetectorLV->SetVisAttributes(LDVA);
+
+  /*
+  G4VPhysicalVolume* LD1 = new G4PVPlacement(
                0,                // no rotation
-               G4ThreeVector(0,0,fLD_C2C_Top),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
+               //G4ThreeVector(0,0,fLD_C2C_Top),  // at (0,0,0)
+               G4ThreeVector(0,0,(fLMO_C2C_inTower)*(0.5)),  // at (0,0,0) 
+	       LightDetectorLV,          // its logical volume
                "LD1T",    // its name
                worldLV,          // its mother  volume
                false,            // no boolean operation
                0,                // copy number
                fCheckOverlaps);  // checking overlaps
 
-  new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(0,0,-fLD_C2C_Bot),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
+  G4VPhysicalVolume* LD2 = new G4PVPlacement(
+               0,                // no rotation 
+               //G4ThreeVector(0,0,-fLD_C2C_Bot-excess),  // at (0,0,0)
+               G4ThreeVector(0,0,(-fLMO_C2C_inTower)*(0.5)),  // at (0,0,0)
+	       LightDetectorLV,          // its logical volume
                "LD1B",    // its name
                worldLV,          // its mother  volume
                false,            // no boolean operation
@@ -613,9 +550,9 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
                fCheckOverlaps);  // checking overlaps
 
 
-  new G4PVPlacement(
-              0,                // no rotation
-              G4ThreeVector(0,-fLMO_C2C_inTower,fLD_C2C_Top),  // at (0,0,0)
+  G4VPhysicalVolume* LD3 = new G4PVPlacement(
+              t1,                // 
+              G4ThreeVector(0,(-fLMO_C2C_inTower)*(0.5),0),  // at (0,0,0)
               LightDetectorLV,          // its logical volume
               "LD2T",    // its name
               worldLV,          // its mother  volume
@@ -623,377 +560,191 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes()
               2,                // copy number
               fCheckOverlaps);  // checking overlaps
 
-  new G4PVPlacement(
-              0,                // no rotation
-              G4ThreeVector(0,-fLMO_C2C_inTower,-fLD_C2C_Bot),  // at (0,0,0)
+  G4VPhysicalVolume* LD4 = new G4PVPlacement(
+              t1,                // 
+              G4ThreeVector(0,(fLMO_C2C_inTower)*(0.5),0),  // at (0,0,0)
               LightDetectorLV,          // its logical volume
               "LD2B",    // its name
               worldLV,          // its mother  volume
               false,            // no boolean operation
               3,                // copy number
               fCheckOverlaps);  // checking overlaps
-
-  new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(fLMO_C2C_inTower,0,fLD_C2C_Top),  // at (0,0,0)
+ */
+  
+  G4VPhysicalVolume* LD5 = new G4PVPlacement(
+               p1,                // no rotation
+               G4ThreeVector((-fLMO_C2C_inTower)*(0.5),0,0),  // at (0,0,0)
                LightDetectorLV,          // its logical volume
                "LD3T",    // its name
                worldLV,          // its mother  volume
                false,            // no boolean operation
-               4,                // copy number
+               0,                // copy number
                fCheckOverlaps);  // checking overlaps
 
-  new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(fLMO_C2C_inTower,0,-fLD_C2C_Bot),  // at (0,0,0)
+  G4VPhysicalVolume* LD6 = new G4PVPlacement(
+               p1,                // no rotation
+               G4ThreeVector((fLMO_C2C_inTower)*(0.5),0,0),  // at (0,0,0)
                LightDetectorLV,          // its logical volume
                "LD3B",    // its name
-               worldLV,          // its mother  volume
-               false,            // no boolean operation
-               5,                // copy number
-               fCheckOverlaps);  // checking overlaps
-
- new G4PVPlacement(
-              0,                // no rotation
-              G4ThreeVector(0,fLMO_C2C_diffTower,fLD_C2C_Top),  // at (0,0,0)
-              LightDetectorLV,          // its logical volume
-              "LD4T",    // its name
-              worldLV,          // its mother  volume
-              false,            // no boolean operation
-              6,                // copy number
-              fCheckOverlaps);  // checking overlaps
-
- new G4PVPlacement(
-              0,                // no rotation
-              G4ThreeVector(0,fLMO_C2C_diffTower,-fLD_C2C_Bot),  // at (0,0,0)
-              LightDetectorLV,          // its logical volume
-              "LD4B",    // its name
-              worldLV,          // its mother  volume
-              false,            // no boolean operation
-              7,                // copy number
-              fCheckOverlaps);  // checking overlaps
-
-
- new G4PVPlacement(
-             0,                // no rotation
-             G4ThreeVector(-fLMO_C2C_diffTower,0,fLD_C2C_Top),  // at (0,0,0)
-             LightDetectorLV,          // its logical volume
-             "LD5T",    // its name
-             worldLV,          // its mother  volume
-             false,            // no boolean operation
-             8,                // copy number
-             fCheckOverlaps);  // checking overlaps
-
- new G4PVPlacement(
-             0,                // no rotation
-             G4ThreeVector(-fLMO_C2C_diffTower,0,-fLD_C2C_Bot),  // at (0,0,0)
-             LightDetectorLV,          // its logical volume
-             "LD5B",    // its name
-             worldLV,          // its mother  volume
-             false,            // no boolean operation
-             9,                // copy number
-             fCheckOverlaps);  // checking overlaps
-
- new G4PVPlacement(
-              0,                // no rotation
-              G4ThreeVector(-fLMO_C2C_diffTower,-fLMO_C2C_inTower,fLD_C2C_Top),  // at (0,0,0)
-              LightDetectorLV,          // its logical volume
-              "LD6T",    // its name
-              worldLV,          // its mother  volume
-              false,            // no boolean operation
-              10,                // copy number
-              fCheckOverlaps);  // checking overlaps
-
- new G4PVPlacement(
-              0,                // no rotation
-              G4ThreeVector(-fLMO_C2C_diffTower,-fLMO_C2C_inTower,-fLD_C2C_Bot),  // at (0,0,0)
-              LightDetectorLV,          // its logical volume
-              "LD6B",    // its name
-              worldLV,          // its mother  volume
-              false,            // no boolean operation
-              11,                // copy number
-              fCheckOverlaps);  // checking overlaps
-
-  new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(fLMO_C2C_inTower,-fLMO_C2C_inTower,fLD_C2C_Top),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
-               "LD7T",    // its name
-               worldLV,          // its mother  volume
-               false,            // no boolean operation
-               12,                // copy number
-               fCheckOverlaps);  // checking overlaps
-
-  new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(fLMO_C2C_inTower,-fLMO_C2C_inTower,-fLD_C2C_Bot),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
-               "LD7B",    // its name
-               worldLV,          // its mother  volume
-               false,            // no boolean operation
-               13,                // copy number
-               fCheckOverlaps);  // checking overlaps
-
-
-  new G4PVPlacement(
-              0,                // no rotation
-              G4ThreeVector(fLMO_C2C_inTower,fLMO_C2C_diffTower,fLD_C2C_Top),  // at (0,0,0)
-              LightDetectorLV,          // its logical volume
-              "LD8T",    // its name
-              worldLV,          // its mother  volume
-              false,            // no boolean operation
-              14,                // copy number
-              fCheckOverlaps);  // checking overlaps
-
-  new G4PVPlacement(
-              0,                // no rotation
-              G4ThreeVector(fLMO_C2C_inTower,fLMO_C2C_diffTower,-fLD_C2C_Bot),  // at (0,0,0)
-              LightDetectorLV,          // its logical volume
-              "LD8B",    // its name
-              worldLV,          // its mother  volume
-              false,            // no boolean operation
-              15,                // copy number
-              fCheckOverlaps);  // checking overlaps
-
-  new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(-fLMO_C2C_diffTower,fLMO_C2C_diffTower,fLD_C2C_Top),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
-               "LD9T",    // its name
-               worldLV,          // its mother  volume
-               false,            // no boolean operation
-               16,                // copy number
-               fCheckOverlaps);  // checking overlaps
-
-  new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(-fLMO_C2C_diffTower,fLMO_C2C_diffTower,-fLD_C2C_Bot),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
-               "LD9B",    // its name
-               worldLV,          // its mother  volume
-               false,            // no boolean operation
-               17,                // copy number
-               fCheckOverlaps);  // checking overlaps
-
-   new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(0,0,fLD_UpperRowZ),  // at (0,0,0)
-                LightDetectorLV,          // its logical volume
-                "LD10T",    // its name
-                worldLV,          // its mother  volume
-                false,            // no boolean operation
-                18,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-   new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(0,-fLMO_C2C_inTower,fLD_UpperRowZ),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
-               "LD11T",    // its name
-               worldLV,          // its mother  volume
-               false,            // no boolean operation
-               19,                // copy number
-               fCheckOverlaps);  // checking overlaps
-
-   new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(fLMO_C2C_inTower,0,fLD_UpperRowZ),  // at (0,0,0)
-                LightDetectorLV,          // its logical volume
-                "LD12T",    // its name
-                worldLV,          // its mother  volume
-                false,            // no boolean operation
-                20,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-  new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(0,fLMO_C2C_diffTower,fLD_UpperRowZ),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
-               "LD13T",    // its name
-               worldLV,          // its mother  volume
-               false,            // no boolean operation
-               21,                // copy number
-               fCheckOverlaps);  // checking overlaps
-
-  new G4PVPlacement(
-              0,                // no rotation
-              G4ThreeVector(-fLMO_C2C_diffTower,0,fLD_UpperRowZ),  // at (0,0,0)
-              LightDetectorLV,          // its logical volume
-              "LD14T",    // its name
-              worldLV,          // its mother  volume
-              false,            // no boolean operation
-              22,                // copy number
-              fCheckOverlaps);  // checking overlaps
-
-  new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(-fLMO_C2C_diffTower,-fLMO_C2C_inTower,fLD_UpperRowZ),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
-               "LD15T",    // its name
-               worldLV,          // its mother  volume
-               false,            // no boolean operation
-               23,                // copy number
-               fCheckOverlaps);  // checking overlaps
-
-   new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(fLMO_C2C_inTower,-fLMO_C2C_inTower,fLD_UpperRowZ),  // at (0,0,0)
-                LightDetectorLV,          // its logical volume
-                "LD16T",    // its name
-                worldLV,          // its mother  volume
-                false,            // no boolean operation
-                24,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-   new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(fLMO_C2C_inTower,fLMO_C2C_diffTower,fLD_UpperRowZ),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
-               "LD17T",    // its name
-               worldLV,          // its mother  volume
-               false,            // no boolean operation
-               25,                // copy number
-               fCheckOverlaps);  // checking overlaps
-
-   new G4PVPlacement(
-                0,                // no rotation
-                G4ThreeVector(-fLMO_C2C_diffTower,fLMO_C2C_diffTower,fLD_UpperRowZ),  // at (0,0,0)
-                LightDetectorLV,          // its logical volume
-                "LD18T",    // its name
-                worldLV,          // its mother  volume
-                false,            // no boolean operation
-                26,                // copy number
-                fCheckOverlaps);  // checking overlaps
-
-  new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(0,0,-fLD_LowerRowZ),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
-               "LD1B",    // its name
                worldLV,          // its mother  volume
                false,            // no boolean operation
                1,                // copy number
                fCheckOverlaps);  // checking overlaps
 
 
-  new G4PVPlacement(
-              0,                // no rotation
-              G4ThreeVector(0,-fLMO_C2C_inTower,-fLD_LowerRowZ),  // at (0,0,0)
-              LightDetectorLV,          // its logical volume
-              "LD2B",    // its name
-              worldLV,          // its mother  volume
-              false,            // no boolean operation
-              3,                // copy number
-              fCheckOverlaps);  // checking overlaps
+  // *
+  // Aluminium Reflectors
+  // *
+  auto AR
+    = new G4Box("AluminiumReflectors",     // its name
+                 fLD_xy, fLD_xy, fLD_z); // its size
+
+  G4LogicalVolume* ARLV
+    = new G4LogicalVolume(
+                 AR,     // its solid
+                 ARMaterial,  // its material
+                 "ARLV");   // its name
+
+  //G4int segs = 4;
+  G4VisAttributes* ARVA = new G4VisAttributes();
+  ARVA->SetColor(0.0,1.0,0.0,1.0);
+  ARVA->SetForceLineSegmentsPerCircle(4);
+  ARLV->SetVisAttributes(ARVA);
 
 
-  new G4PVPlacement(
+  G4VPhysicalVolume* AR1 = new G4PVPlacement(
                0,                // no rotation
-               G4ThreeVector(fLMO_C2C_inTower,0,-fLD_LowerRowZ),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
-               "LD3B",    // its name
+               G4ThreeVector(0,0,(fLMO_C2C_inTower)*(0.5)),  // at (0,0,0) 
+	       ARLV,          // its logical volume
+               "AR1T",    // its name
                worldLV,          // its mother  volume
                false,            // no boolean operation
-               5,                // copy number
+               3,                // copy number
+               fCheckOverlaps);  // checking overlaps
+
+  G4VPhysicalVolume* AR2 = new G4PVPlacement(
+               0,                // no rotation 
+               G4ThreeVector(0,0,(-fLMO_C2C_inTower)*(0.5)),  // at (0,0,0)
+	       ARLV,          // its logical volume
+               "AR1B",    // its name
+               worldLV,          // its mother  volume
+               false,            // no boolean operation
+               4,                // copy number
                fCheckOverlaps);  // checking overlaps
 
 
-  new G4PVPlacement(
-              0,                // no rotation
-              G4ThreeVector(0,fLMO_C2C_diffTower,-fLD_LowerRowZ),  // at (0,0,0)
-              LightDetectorLV,          // its logical volume
-              "LD4B",    // its name
+  G4VPhysicalVolume* AR3 = new G4PVPlacement(
+              t1,                // 
+              G4ThreeVector(0,(-fLMO_C2C_inTower)*(0.5),0),  // at (0,0,0)
+              ARLV,          // its logical volume
+              "AR2T",    // its name
               worldLV,          // its mother  volume
               false,            // no boolean operation
-              7,                // copy number
+              5,                // copy number
               fCheckOverlaps);  // checking overlaps
 
-
-  new G4PVPlacement(
-             0,                // no rotation
-             G4ThreeVector(-fLMO_C2C_diffTower,0,-fLD_LowerRowZ),  // at (0,0,0)
-             LightDetectorLV,          // its logical volume
-             "LD5B",    // its name
-             worldLV,          // its mother  volume
-             false,            // no boolean operation
-             9,                // copy number
-             fCheckOverlaps);  // checking overlaps
-
-
-  new G4PVPlacement(
-              0,                // no rotation
-              G4ThreeVector(-fLMO_C2C_diffTower,-fLMO_C2C_inTower,-fLD_LowerRowZ),  // at (0,0,0)
-              LightDetectorLV,          // its logical volume
-              "LD6B",    // its name
+  G4VPhysicalVolume* AR4 = new G4PVPlacement(
+              t1,                // 
+              G4ThreeVector(0,(fLMO_C2C_inTower)*(0.5),0),  // at (0,0,0)
+              ARLV,          // its logical volume
+              "AR2B",    // its name
               worldLV,          // its mother  volume
               false,            // no boolean operation
-              11,                // copy number
-              fCheckOverlaps);  // checking overlaps
+              6,                // copy number
+              fCheckOverlaps);  // checking overlaps 
 
 
-  new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(fLMO_C2C_inTower,-fLMO_C2C_inTower,-fLD_LowerRowZ),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
-               "LD7B",    // its name
-               worldLV,          // its mother  volume
-               false,            // no boolean operation
-               13,                // copy number
-               fCheckOverlaps);  // checking overlaps
+ 
+  //
+  // Interfaces
+  //
 
 
-  new G4PVPlacement(
-              0,                // no rotation
-              G4ThreeVector(fLMO_C2C_inTower,fLMO_C2C_diffTower,-fLD_LowerRowZ),  // at (0,0,0)
-              LightDetectorLV,          // its logical volume
-              "LD8B",    // its name
-              worldLV,          // its mother  volume
-              false,            // no boolean operation
-              15,                // copy number
-              fCheckOverlaps);  // checking overlaps
-
-  new G4PVPlacement(
-               0,                // no rotation
-               G4ThreeVector(-fLMO_C2C_diffTower,fLMO_C2C_diffTower,-fLD_LowerRowZ),  // at (0,0,0)
-               LightDetectorLV,          // its logical volume
-               "LD9B",    // its name
-               worldLV,          // its mother  volume
-               false,            // no boolean operation
-               17,                // copy number
-               fCheckOverlaps);  // checking overlaps
-
-
-
+  // *
+  // Setting up surfaces and surface types for interfaces.
+  // *  
   G4LogicalBorderSurface* surface1 = new G4LogicalBorderSurface("Surface1", fLMO1, worldPV, fSurface);
-  // G4OpticalSurface* opticalSurface1 =
   dynamic_cast<G4OpticalSurface*>(surface1->GetSurface(fLMO1, worldPV)->GetSurfaceProperty());
-  new G4LogicalBorderSurface("Surface2", fLMO2, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface3", fLMO3, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface4", fLMO4, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface5", fLMO5, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface6", fLMO6, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface7", fLMO7, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface8", fLMO8, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface9", fLMO9, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface10", fLMO10, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface11", fLMO11, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface12", fLMO12, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface13", fLMO13, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface14", fLMO14, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface15", fLMO15, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface16", fLMO16, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface17", fLMO17, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface18", fLMO18, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface19", fLMO19, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface20", fLMO20, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface21", fLMO21, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface22", fLMO22, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface23", fLMO23, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface24", fLMO24, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface25", fLMO25, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface26", fLMO26, worldPV, fSurface);
-  new G4LogicalBorderSurface("Surface27", fLMO27, worldPV, fSurface);
 
+  G4OpticalSurface* t2 = new G4OpticalSurface("test_s");
+  t2->SetModel(unified);
+  t2->SetType(dielectric_dielectric);
+  t2->SetFinish(ground);
+  t2->SetSigmaAlpha(0.1);
+  
+  G4OpticalSurface* t3 = new G4OpticalSurface("test_s2");
+  t3->SetModel(unified);
+  t3->SetType(dielectric_dielectric);
+  t3->SetFinish(polished);
+
+  // *
+  // Setting the surface type variable for between the 
+  //  aluminium reflector and the interim vacuum.
+  //  Using an external file in the /src directory because
+  //  GEANT4 macros are ridiculous.
+  // *
+  char label = readExtFile("surface");
+  G4OpticalSurface* sides; 
+  G4OpticalSurface* tb;
+  
+  if(label == '3'){ // POLISHED
+	sides = t3; tb = t3;
+
+	G4cout << "POLISHED" << G4endl;
+
+  } else if (label == '2'){ // GROUND
+	sides = t2; tb = t2;
+
+	G4cout << "GROUND" << G4endl;
+
+  } else { // BOTH
+	sides = t3; tb = t2;
+
+	G4cout << "BOTH" << G4endl;
+  }
+
+  // *
+  //	TODO: property of the interum vacuum sides for below?
+  // *
+
+  // *
+  // Set the surface properties on both sides of the interface
+  //  between the interim vacuum and the LMO crystal
+  // *
+  new G4LogicalBorderSurface("Surface2",IV1,fLMO1,sides);
+  new G4LogicalBorderSurface("Surface3",IV2,fLMO1,sides);
+  new G4LogicalBorderSurface("Surface4",IV3,fLMO1,sides);
+  new G4LogicalBorderSurface("Surface5",IV4,fLMO1,sides);
+  new G4LogicalBorderSurface("Surface6",IV5,fLMO1,tb);
+  new G4LogicalBorderSurface("Surface7",IV6,fLMO1,tb);
+ 
+  new G4LogicalBorderSurface("Surface2",fLMO1,IV1,sides);
+  new G4LogicalBorderSurface("Surface3",fLMO1,IV2,sides);
+  new G4LogicalBorderSurface("Surface4",fLMO1,IV3,sides);
+  new G4LogicalBorderSurface("Surface5",fLMO1,IV4,sides);
+  new G4LogicalBorderSurface("Surface6",fLMO1,IV5,tb);
+  new G4LogicalBorderSurface("Surface7",fLMO1,IV6,tb);
+
+  // *
+  // Set the surface properties on both sides of the interface
+  //  between the interim vacuum and the aluminium reflector 
+  //  (so the aluminium reflector side is always polished)
+  // *
+  new G4LogicalBorderSurface("Surface2",AR1,IV1,t3);
+  new G4LogicalBorderSurface("Surface3",AR2,IV2,t3);
+  new G4LogicalBorderSurface("Surface4",AR3,IV3,t3);
+  new G4LogicalBorderSurface("Surface5",AR4,IV4,t3);
+  new G4LogicalBorderSurface("Surface6",LD5,IV5,t3);
+  new G4LogicalBorderSurface("Surface7",LD6,IV6,t3);
+ 
+  new G4LogicalBorderSurface("Surface2",IV1,AR1,t3);
+  new G4LogicalBorderSurface("Surface3",IV2,AR2,t3);
+  new G4LogicalBorderSurface("Surface4",IV3,AR3,t3);
+  new G4LogicalBorderSurface("Surface5",IV4,AR4,t3);
+  new G4LogicalBorderSurface("Surface6",IV5,LD5,t3);
+  new G4LogicalBorderSurface("Surface7",IV6,LD6,t3);
+ 
+  G4cout << G4endl << "Setting Optical Surface at Junctions." << G4endl;
 
 
 
@@ -1024,8 +775,27 @@ void DetectorConstruction::ConstructSDandField()
   auto fLDSD
     = new LightDetectorSD("LightDetectorSD", "AbsorberHitsCollection", fNofLayers);
   G4SDManager::GetSDMpointer()->AddNewDetector(fLDSD);
+ 
+  // *
+  // Make the Light Detectors and Aluminium Reflectors Sensitive Detectors 
+  // *
   SetSensitiveDetector("LightDetectorLV",fLDSD);
-  SetSensitiveDetector("LMO",fLDSD);
+  SetSensitiveDetector("ARLV",fLDSD);
+
+  // *
+  // Now we can set the property of being a sensitive detector for the LMO 
+  //  with an external file (gosh darn macros are a pain to figure out)
+  // *
+  char label = readExtFile("sensitive");
+  
+  if(label == '1'){ 	
+	SetSensitiveDetector("LMO",fLDSD);
+	SetSensitiveDetector("LMO_primary",fLDSD);
+
+	G4cout << "LMO sensitive" << G4endl;
+  } else {
+	G4cout << "LMO not sensitive" << G4endl;
+  }
 
 }
 
@@ -1132,3 +902,50 @@ void DetectorConstruction::AddLMOMPC(const G4String& prop, G4double v)
 //   fLDMPT->DumpTable();
 //   G4cout << "............." << G4endl;
 // }
+
+
+
+
+
+
+
+
+
+
+// *
+// Dude, GEANT4 macros are impossible to figure out ........ so use an external file
+//  in the /src folder for that logick (essentially the same thing except that macros
+//  are more obtuse and more difficult than like 5 LoC >:( )
+// *
+char readExtFile(const char* filename){
+
+	FILE *p = fopen(filename,"r");
+	
+	if(p == NULL){
+		return '0';
+	}
+
+	return fgetc(p);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
