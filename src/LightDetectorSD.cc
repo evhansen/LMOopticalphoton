@@ -59,8 +59,9 @@ LightDetectorSD::~LightDetectorSD()
 void LightDetectorSD::Initialize(G4HCofThisEvent* hce)
 {
   // Create hits collection
-  fHitsCollection
-    = new LightDetectorHitsCollection(SensitiveDetectorName, collectionName[0]);
+  fHitsCollection // LightDetectorHitsCollection
+	  //= new G4THitsCollection<LightDetectorHit>;
+	  = new LightDetectorHitsCollection(SensitiveDetectorName, collectionName[0]);
 
   // Add this collection in hce
   auto hcID
@@ -80,9 +81,24 @@ G4bool LightDetectorSD::ProcessHits(G4Step* step,
                                      G4TouchableHistory*)
 {
   // energy deposit
-  auto edep = step->GetTotalEnergyDeposit();
-  if(edep == 0.)
-    return false;  // No edep so don't count as hit
+  
+  G4double edep = step->GetTotalEnergyDeposit();
+  // was auto edep
+ 
+  if(edep == 0.){
+	/*G4cout<<"************************************************"<<G4endl;
+  	G4cout<<"********NO ENERGY HIT DETECTED************"<<G4endl;
+  	G4cout<<"************************************************"<<G4endl;
+
+      	const G4VTouchable* touchable 
+		= (step->GetPreStepPoint()->GetTouchable());
+  
+  	G4cout<<"Copy number: "<<touchable->GetCopyNumber()<<G4endl;
+	*/
+	
+	  return false;  // No edep so don't count as hit
+  }
+
 
   // step length
   // G4double stepLength = 0.;
@@ -92,20 +108,23 @@ G4bool LightDetectorSD::ProcessHits(G4Step* step,
   // if (stepLength == 0. )
   //   return false; // No step length so don't count as hit
 
-
-
   G4StepPoint* thePrePoint = step->GetPreStepPoint();
   G4StepPoint* thePostPoint = step->GetPostStepPoint();
 
-  auto touchable = (step->GetPreStepPoint()->GetTouchable());
+  const G4VTouchable* touchable = (step->GetPreStepPoint()->GetTouchable());
+  // was auto touchable
+
   G4VPhysicalVolume* thePrePV = touchable->GetVolume();
   G4int copyNumber = touchable->GetCopyNumber();
-  // G4cout<<"==> logical volume-> "<< thePrePV->GetLogicalVolume()->GetName() <<G4endl;
+  
+
+
+    // G4cout<<"==> logical volume-> "<< thePrePV->GetLogicalVolume()->GetName() <<G4endl;
   // G4cout<<"==> which copy -> "<< touchable->GetCopyNumber() <<G4endl;
 
-
-  G4ThreeVector pos = thePrePoint->GetPosition() + thePostPoint->GetPosition();
-  pos /= 2.;
+  G4ThreeVector pos = 
+	  (thePrePoint->GetPosition() + thePostPoint->GetPosition()) / 2.;
+  //pos /= 2.;
 
 
   // Get LightDetector cell id
@@ -120,6 +139,27 @@ G4bool LightDetectorSD::ProcessHits(G4Step* step,
   //     "MyCode0004", FatalException, msg);
   // }
 
+/* 
+  G4cout<<"************************************************"<<G4endl;
+  G4cout<<"************************************************"<<G4endl;
+  G4cout<<"******************************\nHit Detected!! YAAAY\n******************************"<<G4endl;
+  G4cout<<"************************************************"<<G4endl;
+  G4cout<<"************************************************"<<G4endl;
+  
+
+  G4cout<<"Edep: "<< edep<<G4endl;
+  G4cout<<"Copy number: "<< copyNumber<<G4endl;
+  G4cout<<"Position: "<< pos<<G4endl;
+
+  G4cout << "********* fHitsCollection->entries: "<<fHitsCollection->entries()
+	  <<G4endl;
+  for (G4int i=0;i<fHitsCollection->entries();i++){
+  	G4cout<<"fHitsCollection entry: "<<i<<"\n Copy number: "
+		<<(*fHitsCollection)[i]->GetPhysVolNum()<<G4endl;
+  }
+*/
+
+
   // Get hit for total accounting
   auto hitTotal
     = (*fHitsCollection)[fHitsCollection->entries()];
@@ -129,8 +169,8 @@ G4bool LightDetectorSD::ProcessHits(G4Step* step,
   OPhit->SetEdep(edep);
   OPhit->SetPhysVolNum(copyNumber);
   OPhit->SetPos(pos);
-  // G4cout<<"pos-> "<<pos<<G4endl;
-
+  
+  //OPhit->SetiPos();
 
   fHitsCollection->insert(OPhit);
 

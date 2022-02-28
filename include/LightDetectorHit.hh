@@ -1,29 +1,3 @@
-//
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
-//
-//
 /// \file LightDetectorHit.hh
 /// \brief Definition of the LightDetectorHit class
 
@@ -48,13 +22,25 @@ class LightDetectorHit : public G4VHit
   public:
     LightDetectorHit();
     LightDetectorHit(G4VPhysicalVolume* pVol);
-
-    LightDetectorHit(const LightDetectorHit&);
+    LightDetectorHit(const LightDetectorHit& right);
+    
     virtual ~LightDetectorHit();
 
     // operators
-    const LightDetectorHit& operator=(const LightDetectorHit&);
-    G4bool operator==(const LightDetectorHit&) const;
+    const LightDetectorHit& operator=(const LightDetectorHit& rLDH){
+    	
+	fEdep = rLDH.fEdep;
+	fPhysVol = rLDH.fPhysVol;
+	fPhysVolNum = rLDH.fPhysVolNum;
+    	fPos = rLDH.fPos;
+	//iPos = rLDH.iPos;
+	
+	return *this;
+    }
+    	
+    G4bool operator==(const LightDetectorHit& rLDH) const {
+	return (this==&rLDH) ? true : false;
+    }
 
     inline void* operator new(size_t);
     inline void  operator delete(void*);
@@ -73,16 +59,23 @@ class LightDetectorHit : public G4VHit
 
     G4double GetPhysVolNum() const;
     inline void SetPhysVolNum(G4int plv) { fPhysVolNum = plv; }
+    inline const G4VPhysicalVolume* GetPhysV() { return fPhysVol; } // ?
 
+    G4double GetxfPos() const;
+    G4double GetyfPos() const;
+    G4double GetzfPos() const;
     inline void SetPos(G4ThreeVector xyz) { fPos = xyz; }
-    inline const G4VPhysicalVolume* GetPhysV() { return fPhysVol; }
+    
+    
     // G4double GetTrackLength() const;
 
   private:
+    
     G4double fEdep;        ///< Energy deposit in the sensitive volume
     G4int fPhysVolNum;
     G4ThreeVector fPos;
     const G4VPhysicalVolume* fPhysVol;
+    
     // G4double fTrackLength; ///< Track length in the  sensitive volume
 };
 
@@ -124,6 +117,20 @@ inline G4double LightDetectorHit::GetEdep() const {
 inline G4double LightDetectorHit::GetPhysVolNum() const {
   return fPhysVolNum;
 }
+
+inline G4double LightDetectorHit::GetxfPos() const {
+	return fPos.getX();
+}
+
+inline G4double LightDetectorHit::GetyfPos() const {
+	return fPos.getY();
+}
+
+inline G4double LightDetectorHit::GetzfPos() const {
+	return fPos.getZ();
+}
+
+
 // inline G4double LightDetectorHit::GetPos() const {
 //   return fEdep;
 // }
