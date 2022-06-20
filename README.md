@@ -1,4 +1,4 @@
-//
+
 // ********************************************************************
 // * License and Disclaimer                                           *
 // *                                                                  *
@@ -22,37 +22,45 @@
 // * use  in  resulting  scientific  publications,  and indicate your *
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
-//
-/// \file optical/OpNovice2/include/HistoManager.hh
-/// \brief Definition of the HistoManager class
-//
-//
-//
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+(Including the licences and such in individual files drives me mad so here you go. Based on some example.)
 
-#ifndef HistoManager_h
-#define HistoManager_h 1
 
-#include "globals.hh"
 
-#include "g4root.hh"
-//#include "g4xml.hh"
-//#include "g4csv.hh"
+EM is encapsulatory material, e.g. aluminium reflectors.
+LD is light detector.
+ARC is antireflective coating.
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+ROOT files saved to data/
+Flags set by files in options/ (I know, I know, I know, I know)
 
-class HistoManager
-{
- public:
-  HistoManager();
-  ~HistoManager();
 
- private:
-  void Book();
-  G4String fFileName;
-};
+Main issue: muons getting stuck in crystal/ LD boundaries (when G4OpticalPhysics is registered -- fixed? OOM still kills with certain time segments.).
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-#endif
+
+TODO: fix all of the derp flags .....
+
+TODO: change "lmo" to "crys" everywhere ... teo2 is sad.
+
+    char prng; // if 'c', C PRNG, otherwise G4 PRNG
+
+    char lmos; 	// if 1, LMO exists
+   		// if 2, LMO exists and is a sensitive detector 
+		// else, not
+
+TODO: float crysd; // cubic crystal dimension (in mm)
+
+    float ldg;	// value of LD gap! (in mm)
+    float emg;	// value of EM gap! (in mm)
+
+    char arc; // whether the antireflective coating is being used
+    float arct; // thickness of antireflective coating (in mm)
+
+    char face1; char face2; char face3; char face4; char face5; char face6;
+    // 0 is nothing, 1 is an LD, and 2 is an EM
+
+    char crysmat; // switch lmo, teo2  
+    char ldmat; // 1 is Si, else Ge
+    char emat; // 1 is Cu, m is mysterious (ooOoOOo),  else Al
+    char arcmat; // switch sio2, sio, and nb2o5 
+

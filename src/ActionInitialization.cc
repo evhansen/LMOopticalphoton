@@ -18,6 +18,11 @@ void ActionInitialization::BuildForMaster() const
 void ActionInitialization::Build() const
 {
 	SetUserAction(new PrimaryGeneratorAction(fDetector));
+	
+	RunAction* rA = new RunAction;
+	SetUserAction(rA);
+
+	// TODO: pass runaction to eventaction
+	// in order to fix edep 	
 	SetUserAction(new EventAction);
-	SetUserAction(new RunAction);
 }

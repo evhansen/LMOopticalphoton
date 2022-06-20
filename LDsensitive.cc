@@ -30,6 +30,17 @@
 #include "DetectorConstruction.hh"
 #include "ActionInitialization.hh"
 
+
+#include "G4PhysListFactory.hh"
+
+#include "G4DecayPhysics.hh"
+#include "G4EmExtraPhysics.hh"
+#include "G4IonPhysics.hh"
+#include "G4StoppingPhysics.hh"
+#include "G4HadronElasticPhysics.hh"
+#include "G4NeutronTrackingCut.hh"
+#include "G4HadronPhysicsFTFP_BERT.hh"
+
 #include "G4OpticalPhysics.hh"
 #include "G4EmStandardPhysics_option4.hh"
 
@@ -37,7 +48,9 @@
 
 #include "G4UImanager.hh"
 #include "G4UIcommand.hh"
+
 #include "FTFP_BERT.hh"
+
 #include "G4String.hh"
 #include "G4Types.hh"
 
@@ -45,6 +58,8 @@
 
 #include "G4VisExecutive.hh"
 #include "G4UIExecutive.hh"
+
+#include "G4StepLimiterPhysics.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -61,8 +76,8 @@ namespace {
 
 int main(int argc,char** argv)
 {
+
   // Evaluate arguments
-  //
   if ( argc > 7 ) {
     PrintUsage();
     return 1;
@@ -88,18 +103,15 @@ int main(int argc,char** argv)
   }
 
   // Detect interactive mode (if no macro provided) and define UI session
-  //
   G4UIExecutive* ui = 0;
   if ( ! macro.size() ) {
     ui = new G4UIExecutive(argc, argv, session);
   }
 
   // Optionally: choose a different Random engine...
-  //
   // G4Random::setTheEngine(new CLHEP::MTwistEngine);
 
   // Construct the default run manager
-  //
   auto* runManager =
     G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
 #ifdef G4MULTITHREADED
@@ -108,44 +120,54 @@ int main(int argc,char** argv)
   }
 #endif
 
-  // Set mandatory initialization classes
-  //
-  auto detConstruction = new DetectorConstruction();
-  runManager->SetUserInitialization(detConstruction);
+
+  // TODO: fix physics registration after particles are dandy ..................
 
   G4VModularPhysicsList* physicsList = new FTFP_BERT;
-  physicsList->ReplacePhysics(new G4EmStandardPhysics_option4());
-  G4OpticalPhysics* opticalPhysics = new G4OpticalPhysics();
-
-  physicsList->RegisterPhysics(opticalPhysics);
+	 
+  physicsList->RegisterPhysics(new G4OpticalPhysics());
+  physicsList->RegisterPhysics(new G4EmStandardPhysics_option4());
+  physicsList->RegisterPhysics(new G4EmExtraPhysics());
+  physicsList->RegisterPhysics(new G4DecayPhysics());
+  physicsList->RegisterPhysics(new G4HadronElasticPhysics());
+  physicsList->RegisterPhysics(new G4HadronPhysicsFTFP_BERT());
+  physicsList->RegisterPhysics(new G4StoppingPhysics());
+  physicsList->RegisterPhysics(new G4IonPhysics());
+  physicsList->RegisterPhysics(new G4NeutronTrackingCut());
+  physicsList->RegisterPhysics(new G4StepLimiterPhysics());
+  
   runManager->SetUserInitialization(physicsList);
+
+  
+  // Set mandatory initialization classes
+  
+  auto detConstruction = new DetectorConstruction();
+  runManager->SetUserInitialization(detConstruction);
 
   auto actionInitialization = new ActionInitialization(detConstruction);
   runManager->SetUserInitialization(actionInitialization);
 
   // Initialize visualization
-  auto visManager = new G4VisExecutive;
-  // G4VisExecutive can take a verbosity argument - see /vis/verbose guidance.
-  // G4VisManager* visManager = new G4VisExecutive("Quiet");
+  
+  G4VisManager* visManager = new G4VisExecutive(5);
   visManager->Initialize();
 
-  // Get the pointer to the User Interface manager
-  auto UImanager = G4UImanager::GetUIpointer();
+  G4UImanager* UImanager = G4UImanager::GetUIpointer();
 
   // Process macro or start UI session
-  //
-  if ( macro.size() ) {
-    // batch mode
+  
+  if ( macro.size() ) { // batch mode
     G4String command = "/control/execute ";
     UImanager->ApplyCommand(command+macro);
-  }
-  else  {
-    // interactive mode : define UI session
+  
+  } else  { // interactive mode : define UI session
+    
     UImanager->ApplyCommand("/control/execute init_vis.mac");
-    if (ui->IsGUI()) {
-      UImanager->ApplyCommand("/control/execute gui.mac");
-    }
+    
+    UImanager->ApplyCommand("/control/execute LDsensitive.mac"); // yes, I am lazy
+
     ui->SessionStart();
+
     delete ui;
   }
 
@@ -156,6 +178,7 @@ int main(int argc,char** argv)
 
   delete visManager;
   delete runManager;
+
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo.....

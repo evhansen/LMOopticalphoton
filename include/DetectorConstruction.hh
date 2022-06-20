@@ -27,57 +27,41 @@ class DetectorConstruction : public G4VUserDetectorConstruction
     G4VPhysicalVolume* DefineWorld();
     void DefineVolumes();
 
+    // *******************
+    // For defining materials
+    // *******************
+
+    void DefineLDM(char mat = '1');
+    void DefineEMM(char mat = '1');
+    void DefineCrysM(char mat = '1');
+    void DefineARCM(char mat = '1');
+    void DefineWorldM(char mat = '1');
+
+
 
     // *******************
-    // For setting options
+    // For defining physical objects
     // *******************
 
-    char ldmat; // if 1, LD material is Silicon,
-    		// else Germanium
+    G4VPhysicalVolume* DefineCrys(G4double LMOHalfSizes[]);
 
-    char emat; 	// if 1, EMMaterial is G4_Cu, 
-    		// 2 then Ge_Pyrex_Glass
-		// 3 then G4_GLASS_LEAD
-		// 4 then G4_POLYTRIFLUOROCHLOROETHYLENE
-		// else G4_Al
+    void DefineIV(G4double IVHalfSizes[],G4double IVPos[],
+G4VPhysicalVolume** IV1,G4VPhysicalVolume** IV2,G4VPhysicalVolume** IV3,G4VPhysicalVolume** IV4,G4VPhysicalVolume** IV5,G4VPhysicalVolume** IV6);
 
-    char none; 	// if 1, no encapsulatory materials -- only LDs,
-   	       	// else, only two LDs
-		// overrides em
+    void DefineLD(G4double LDHalfSizes[],G4double LDPos[],
+G4VPhysicalVolume** LD1,G4VPhysicalVolume** LD2,G4VPhysicalVolume** LD3,G4VPhysicalVolume** LD4,G4VPhysicalVolume** LD5,G4VPhysicalVolume** LD6);
 
-    char pg;	// if 1, using photon gun
+    void DefineEM(G4double EMHalfSizes[],G4double EMPos[],
+G4VPhysicalVolume** EM1,G4VPhysicalVolume** EM2,G4VPhysicalVolume** EM3,G4VPhysicalVolume** EM4,G4VPhysicalVolume** EM5,G4VPhysicalVolume** EM6);
 
-    char em; 	// if 1, using encapsulatory materials 
-		// none overrides em; used if none != 1
+    void DefineARC(G4double ARCHalfSizes[],G4double ARCPos[],
+G4VPhysicalVolume** ARC1,G4VPhysicalVolume** ARC2,G4VPhysicalVolume** ARC3,G4VPhysicalVolume** ARC4,G4VPhysicalVolume** ARC5,G4VPhysicalVolume** ARC6);
 
-    char sf;	// if 3, all sides polished
-  		// 2 then all sides ground 
-		// else, two sides ground, others polished 
-
-    char lmos; 	// if 1, LMO exists
-   		// if 2, LMO exists and is a sensitive detector 
-		// else, not
-
-    char oc;	// if 1, in optical contact
-    		// else, not
-
-    char arc;	// if 1 and oc != 1, use antireflective coating
-    		// else, not
-
-    double arct;// thickness of antireflective coating 
-    		// if in use (in nms)
-    
-    char dddm; // if 1, dielectric_dielectric boundaries for EM, LD
-    		// if 2, dielectric_metal
-		// else no trans, refl defined (using d_d)
-
-    char pLD5; // if 1, pointing at LD5,
-    		// turn it into EM
-		// (used if none = '1')
-
-    float ldg;	// value of LD gap! (in mm)
-    float emg;	// value of EM gap!
-
+	
+	
+    // *******************
+    // Setting
+    // *******************
 
     G4bool  fCheckOverlaps; // option to activate checking of volumes overlaps
     G4int   fNofLayers;     // number of layers
@@ -85,54 +69,24 @@ class DetectorConstruction : public G4VUserDetectorConstruction
 
     G4double fLMO_xy;
 
+
     // *****
-    // World
+    // TODO
     // *****
 
     G4LogicalVolume* worldLV;
-    G4MaterialPropertiesTable* fWorldMPT;
+    
     G4Material* WorldMaterial;
-
-    // ***********
-    // LMO Crystal
-    // ***********
-
-    G4LogicalVolume* fLMO_LV_primary; // LMO_primary
-    G4MaterialPropertiesTable* fLMOMPT;
     G4Material* LMOMaterial;
-    
-    // **************
-    // Light Detector
-    // **************
-    
-    G4MaterialPropertiesTable* fLDMPT;
     G4Material* LightDetectorMaterial;
-
-    // **********************
-    // Encapsulatory Material 
-    // **********************
-    
-    G4LogicalVolume* EMLV; // EMLV
-    G4MaterialPropertiesTable* EMMPT;
     G4Material* EMMaterial;
+    G4Material* ARCMaterial;
 
-    // **********************
-    // Optical Surfaces
-    // **********************
-
+    // used in borders' MPTs. :)
     G4MaterialPropertiesTable* LDk;
     G4MaterialPropertiesTable* EMk;
-    //G4MaterialPropertiesTable* dmpP;
-    //G4MaterialPropertiesTable* dmgP;
-   
-
-    // **********************
-    // Antireflective Coating
-    // **********************
-   
-    //G4LogicalVolume* ARCLV; 
-    G4MaterialPropertiesTable* ARCMPT;
-    G4Material* ARCMaterial;
+    G4MaterialPropertiesTable* ARCk;
+    
 };
 
 #endif

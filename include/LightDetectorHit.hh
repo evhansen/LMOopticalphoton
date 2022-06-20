@@ -79,13 +79,11 @@ class LightDetectorHit : public G4VHit
     // G4double fTrackLength; ///< Track length in the  sensitive volume
 };
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 using LightDetectorHitsCollection = G4THitsCollection<LightDetectorHit>;
 
 extern G4ThreadLocal G4Allocator<LightDetectorHit>* LightDetectorHitAllocator;
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 inline void* LightDetectorHit::operator new(size_t)
 {
@@ -139,6 +137,5 @@ inline G4double LightDetectorHit::GetzfPos() const {
 //   return fTrackLength;
 // }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 #endif

@@ -22,15 +22,18 @@ LightDetectorHitsCollection*
 EventAction::GetHitsCollection(G4int hcID,
 const G4Event* event) const
 {
+
 	auto hitsCollection
 	= static_cast<LightDetectorHitsCollection*>(
 	event->GetHCofThisEvent()->GetHC(hcID));
-		if ( ! hitsCollection ) {
+		
+	if ( ! hitsCollection ) {
 		G4ExceptionDescription msg;
 		msg << "Cannot access hitsCollection ID " << hcID;
 		G4Exception("EventAction::GetHitsCollection()",
 		"MyCode0003", FatalException, msg);
 	}
+	
 	return hitsCollection;
 }
 
@@ -44,11 +47,14 @@ G4double absoEdep//, G4double absoTrackLength
 	<< G4endl;
 }
 
-void EventAction::BeginOfEventAction(const G4Event* /*event*/)
-{}
+void EventAction::BeginOfEventAction(const G4Event*)
+{
+// TODO: init event things here
+}
 
 void EventAction::EndOfEventAction(const G4Event* event)
 {
+
 	if ( fAbsHCID == -1 ) {
 		fAbsHCID = G4SDManager::GetSDMpointer()->
 			GetCollectionID("AbsorberHitsCollection");
@@ -67,15 +73,21 @@ void EventAction::EndOfEventAction(const G4Event* event)
 	
 		
 		analysisManager->FillNtupleDColumn(0, absoHit->GetEdep());
+		
+		
 		analysisManager->FillNtupleIColumn(1, absoHit->GetPhysVolNum());
 	
-		analysisManager->FillNtupleFColumn(2, event->GetPrimaryVertex()->GetPosition().getX());
-		analysisManager->FillNtupleFColumn(3, event->GetPrimaryVertex()->GetPosition().getY());
-		analysisManager->FillNtupleFColumn(4, event->GetPrimaryVertex()->GetPosition().getZ());
+		analysisManager->FillNtupleFColumn(2, event->GetPrimaryVertex(0)->GetPosition().getX());
+		analysisManager->FillNtupleFColumn(3, event->GetPrimaryVertex(0)->GetPosition().getY());
+		analysisManager->FillNtupleFColumn(4, event->GetPrimaryVertex(0)->GetPosition().getZ());
 
 		analysisManager->FillNtupleFColumn(5, absoHit->GetxfPos());
 		analysisManager->FillNtupleFColumn(6, absoHit->GetyfPos());
 		analysisManager->FillNtupleFColumn(7, absoHit->GetzfPos());
+		
+		
+		analysisManager->FillNtupleIColumn(8, event->GetPrimaryVertex(0)->GetPrimary()->GetPDGcode());
+	
 		
 		analysisManager->AddNtupleRow();
 	}

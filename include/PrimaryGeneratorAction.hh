@@ -17,7 +17,7 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 
   virtual void GeneratePrimaries(G4Event*);
 
-  G4ParticleGun* GetParticleGun() { return fParticleGun; };
+  G4ParticleGun* GetParticleSource() { return fParticleSource; };
 
   void SetOptPhotonPolar();
   void SetOptPhotonPolar(G4double);
@@ -28,11 +28,37 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 
  private:
 
-  char pg; // if 1, using photon gun
-  char pLD5; // if 1, pointing at LD5
-  char zinc; // if 1, 0 incidence angle
+  char prng; // if 'c' use C PRNG else use G4 PRNG
 
-  G4ParticleGun* fParticleGun;
+  G4ParticleGun* fParticleSource;
+
+
+  // *********
+  // Define functions for computing the initial 
+  // position and momenta of particles 
+  // (qualities of the source)
+  // *********
+  
+  //note: tot is the total number of iterations of the process 
+  // to undergo and num is the number of particles generated 
+  // in one iteration of the process; TODO: get rid of num 
+
+  void RectanglePlateSource(G4int tot,G4int num,G4double PSHalfSizes[],G4double PSPos[],void (*Process)(float[],float[],G4Event*,G4ParticleGun*),G4Event* anEvent);
+  
+  void CircularPlateSource(G4int tot,G4int num,G4double Radius,G4double PSPos[],void (*Process)(float[],float[],G4Event*,G4ParticleGun*),G4Event* anEvent);
+ 
+  // *********
+  // Define the constituents of a single 
+  // iteration of the processes
+  // *********
+ 
+  static void Cobalt60(float ConstituentPos[],float ConstituentDir[],G4Event* anEvent,G4ParticleGun*PG);
+  
+  static void CosmogenicMuons(float ConstituentPos[],float ConstituentDir[],G4Event* anEvent,G4ParticleGun*PG);
+ 
+
+  // Misc
+ 
   PrimaryGeneratorMessenger* fGunMessenger;
   DetectorConstruction* fDetector;
   G4bool fRandomDirection;

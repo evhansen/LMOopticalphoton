@@ -59,7 +59,5 @@ void LightDetectorHit::Print()
 	<< std::setw(7) << fPhysVolNum
 	<< "\nfPosx,y,z: "
 	<< std::setw(7) << fPos.getX() << "," << fPos.getY() << "," << fPos.getZ()
-	//<< "\niPosx,y,z: "
-	// <<
 	<< G4endl;
 }

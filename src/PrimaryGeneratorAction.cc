@@ -10,178 +10,130 @@
 #include "DetectorConstruction.hh"
 
 
+#include "G4MuonMinus.hh"
+#include "G4MuonPlus.hh"
+#include "G4Electron.hh"
+#include "G4Positron.hh"
+#include "G4Gamma.hh"
+#include "G4Alpha.hh"
+
+
+#include <random>
+#include <chrono>
+
+
+#include "DefSrcs.hh"
+
+static void appendP(std::string filename, std::string line);
 static char readExtFile(const char* filename);
 
 PrimaryGeneratorAction::PrimaryGeneratorAction(DetectorConstruction* det)
-: G4VUserPrimaryGeneratorAction() , fParticleGun(0), fDetector(det)
+: G4VUserPrimaryGeneratorAction() , fParticleSource(0), fDetector(det)
 {
 
-	pg = readExtFile("./options/pg");
-	pLD5 = readExtFile("./options/pld5");
-	zinc = readExtFile("./options/zinc");
-	
-	G4int n_particle = 1;
+	prng = readExtFile("./options/prng");
 
-	fParticleGun     = new G4ParticleGun(n_particle);
 
 	fGunMessenger = new PrimaryGeneratorMessenger(this);
+
+
+	G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
 
 	fRandomDirection = false;
 	fPolarized       = false;
 	fPolarization    = 0.;
-	G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
-	G4ParticleDefinition* particle = particleTable->FindParticle("e+");
-	fParticleGun->SetParticleDefinition(particle);
-	fParticleGun->SetParticleTime(0.0 * ns);
-	fParticleGun->SetParticlePosition(G4ThreeVector(0.0*cm,0.0*cm,0.0*cm));
-	fParticleGun->SetParticleMomentumDirection(G4ThreeVector(0., 0., 0.));
+	
+	
 
-	//fParticleGun->SetParticleEnergy(500.0 * keV);
-	fParticleGun->SetParticleEnergy(2.6 * eV);
+	
+	fParticleSource = new G4ParticleGun(1);
 
+	fParticleSource->SetParticleEnergy(2.3*eV);
+	fParticleSource->SetParticleDefinition(G4Electron::Definition());
+	
+	fParticleSource->SetParticleTime(0.0 * ns);
+	fParticleSource->SetParticlePosition(G4ThreeVector(0.0*cm,0.0*cm,0.0*cm));
+	fParticleSource->SetParticleMomentumDirection(G4ThreeVector(0., 0., 0.));
 }
 
 PrimaryGeneratorAction::~PrimaryGeneratorAction()
 {
-	delete fParticleGun;
+	delete fParticleSource;
 	delete fGunMessenger;
 }
 
 void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
-	G4double vx, vy, vz, ux, uy, uz;
-
-		if(pg != '1' && pg != '2') {
-			G4double cosTheta = 2*G4UniformRand() - 1.;
-			G4double sinTheta = std::sqrt(1. - cosTheta*cosTheta);
-			G4double phi = CLHEP::twopi*G4UniformRand();
-			vx = sinTheta*std::cos(phi);
-			vy = sinTheta*std::sin(phi);
-			vz = cosTheta;
-			fParticleGun->SetParticleMomentumDirection
-				(G4ThreeVector(vx,vy,vz));
-
-			// LMO half length
-			G4double Rmax = fDetector->GetLMOXSize();
-			
-			// LMO length
-			G4double R2 = Rmax*2.0;
+	// Co-60 source, 37000/ s * Area
+	//0.025 m diametre source => 18.162338 / s
+	
+	// Muon source, 4*10^(-7)/ cm^(2)s
+	// 0.0225 ^3 m crystal => 0.03^2 m area => 3^2 cm area => 3.6 * 10^(-6) /s
+	
+	// => 10^6 seconds per segment so that:
+	// 18162338 betas/ segment BUT upper half only => 9081169 betas/ segment BUT *2 for muons => 18162338
+	// 3.6 muons / segment => *2 => ~7
 		
-			// G4UniformRand is in (0,1)
-			// let LMO halflength = H
-			// need affine ~U(0,1) => ~U(-H,H)
-			// for x\in (0,1) => y = -H + x (H - (-H)) = -H + 2H x 
-			//ux = G4UniformRand()*R2 - Rmax; 
-			//uy = G4UniformRand()*R2 - Rmax; 
-			//uz = G4UniformRand()*R2 - Rmax;
+	//99.88% of the radiation will be a 0.31 MeV e-, 1.17 MeV g, and 1.33 MeV g.
 
-			float rnd1 = ((float)rand()/RAND_MAX);
-			float rnd2 = ((float)rand()/RAND_MAX);
-			float rnd3 = ((float)rand()/RAND_MAX);
-			
-			ux = rnd1*R2 - Rmax; 
-			uy = rnd2*R2 - Rmax; 
-			uz = rnd3*R2 - Rmax;
-
-			fParticleGun->SetParticlePosition(G4ThreeVector(ux,uy,uz));
-	
-		} else if (pg == '2') {
-				
-			
-			if(pLD5 == '1'){
-
-				if(zinc == '1'){
-					vx = -1.0;
-					vy = 0.0;
-					vz = 0.0;
-				
-					ux = 0.0*mm;
-					uy = 0.0*mm;
-					uz = 0.0*mm;
-				} else {
-				
-					vx = -0.5;
-					vy = -0.5 / std::tan(CLHEP::twopi/(9*2));
-					vz = 0.0;
-				
-					ux = 0.0*mm;
-					uy = 10.0*mm;
-					uz = 0.0*mm;
-				}
-
-			
-				fParticleGun->SetParticleMomentumDirection
-					(G4ThreeVector(vx,vy,vz));
-								
-				fParticleGun->SetParticlePosition
-					(G4ThreeVector(ux,uy,uz));
+	//The muons will be 0.2-1000 GeV
+	//ratio of m+/m- ~ 1.268 +/- (0.008 + 0.0002 p) where p is momentum.
 
 
-			} else {
-				
-	
-				if(zinc == '1'){
-					vx = 0.0;
-					vy = 0.0;
-					vz = 1.0;
-				
-					ux = 0.0*mm;
-					uy = 0.0*mm;
-					uz = 0.0*mm;
-				} else {
-				
-					vy = 0.0;
-					vx = -0.5 / std::tan(CLHEP::twopi/(9*2));
-					vz = 0.5;
-				
-					uy = 0.0*mm;
-					ux = 10.0*mm;
-					uz = 0.0*mm;
-				}
-
-			
-				fParticleGun->SetParticleMomentumDirection
-					(G4ThreeVector(vx,vy,vz));
-								
-				fParticleGun->SetParticlePosition
-					(G4ThreeVector(ux,uy,uz));
-
-
-			}
-
-		} else { // big boi for fibre
-	
-			vx = -1.0;
-			vy = 0.0;
-			//G4double vy = -1.0/std::tan(CLHEP::twopi/(9*2));
-			vz = 0.0;
-			fParticleGun->SetParticleMomentumDirection
-				(G4ThreeVector(vx,vy,vz));
-
-			ux = 33.0*mm; 
-			uy = 0.0*mm;
-			uz = 0.0*mm;
-			fParticleGun->SetParticlePosition(G4ThreeVector(ux,uy,uz));
-		}
 	
 
+	// TODO: fix this .. damn units	
+	G4double LMOHS = fDetector->GetLMOXSize(); // LMOHalfSizes[0], in metres ..
+	
+	//sizes in meters
+	G4double SquarePSHalfSizes[2] = {0.0225,0.0225};
+	G4double Radius = 0.025;
+	G4double SquarePSPos[3] = {0,0,0.04+0.0225};
+	G4double CirclePSPos[3] = {0,0,-0.04-0.0225};
 
-		if(fParticleGun->GetParticleDefinition() ==
-			G4OpticalPhoton::OpticalPhotonDefinition())
-		{
-			if(fPolarized)
-			SetOptPhotonPolar(fPolarization);
-			else
-			SetOptPhotonPolar();
-		}
 
-	//G4cout //<< "Position and momentum generated\n"
-		//<< "***********\nMomentum dir vxyz: " <<vx<<","<<vy<<","<<vz
-	//	<<"Position uxyz: "<<ux<<","<<uy<<","<<uz
-	//	<<G4endl;
 
-	fParticleGun->GeneratePrimaryVertex(anEvent);
+	
+	// source 1: Muons
+	//The muons will be 0.2-1000 GeV
+	//note: hardcoded vertical
+	//RectanglePlateSource(7,1,SquarePSHalfSizes,SquarePSPos,CosmogenicMuons,anEvent);
+
+	// source 2: Co-60
+	//99.88% of the radiation will be a 0.31 MeV e-, 1.17 MeV g, and 1.33 MeV g.
+	//note: hardcoded rand unit vecs
+	//CircularPlateSource(18162338,3,Radius,CirclePSPos,&Cobalt60,anEvent);
+
+
+
+	// Life sux so reducing time segment significantly ...
+	static unsigned int count = 0;
+
+	CircularPlateSource(37,3,Radius,CirclePSPos,Cobalt60,anEvent);
+	count++;
+
+	if(count >= 490874){
+		
+		RectanglePlateSource(7,1,SquarePSHalfSizes,SquarePSPos,CosmogenicMuons,anEvent);
+
+		count = 0;
+	}
+
+
+
+	if(fParticleSource->GetParticleDefinition() ==
+		//G4OpticalPhoton::OpticalPhotonDefinition() ||
+		G4OpticalPhoton::Definition())
+	{
+		if(fPolarized)
+		SetOptPhotonPolar(fPolarization);
+		else
+		SetOptPhotonPolar();
+	}
 }
+
+
+// TODO: figure out if these are needed
 
 void PrimaryGeneratorAction::SetOptPhotonPolar()
 {
@@ -192,7 +144,7 @@ void PrimaryGeneratorAction::SetOptPhotonPolar()
 
 void PrimaryGeneratorAction::SetOptPhotonPolar(G4double angle)
 {
-	if(fParticleGun->GetParticleDefinition() !=
+	if(fParticleSource->GetParticleDefinition() !=
 	G4OpticalPhoton::OpticalPhotonDefinition())
 	{
 		G4ExceptionDescription ed;
@@ -205,7 +157,7 @@ void PrimaryGeneratorAction::SetOptPhotonPolar(G4double angle)
 	fPolarized    = true;
 	fPolarization = angle;
 	G4ThreeVector normal(1., 0., 0.);
-	G4ThreeVector kphoton = fParticleGun->GetParticleMomentumDirection();
+	G4ThreeVector kphoton = fParticleSource->GetParticleMomentumDirection();
 	G4ThreeVector product = normal.cross(kphoton);
 	G4double modul2       = product * product;
 	G4ThreeVector e_perpend(0., 0., 1.);
@@ -215,7 +167,7 @@ void PrimaryGeneratorAction::SetOptPhotonPolar(G4double angle)
 	G4ThreeVector e_paralle = e_perpend.cross(kphoton);
 	G4ThreeVector polar =
 	std::cos(angle) * e_paralle + std::sin(angle) * e_perpend;
-	fParticleGun->SetParticlePolarization(polar);
+	fParticleSource->SetParticlePolarization(polar);
 }
 
 void PrimaryGeneratorAction::SetRandomDirection(G4bool val)
@@ -234,13 +186,16 @@ void PrimaryGeneratorAction::SetRandomInLMO1(G4bool val)
 
 
 
-
+void appendP(std::string filename, std::string line){
+	std::ofstream p;
+	p.open(filename.c_str(),std::ios_base::app);
+	p << line;
+	p.close();
+}
 
 
 char readExtFile(const char* filename){
 	FILE *p = fopen(filename,"r");
-		if(p == NULL){
-		return '0';
-	}
+	if(p == NULL){return '0';}
 	return fgetc(p);
 }
