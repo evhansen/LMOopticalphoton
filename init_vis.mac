@@ -1,9 +1,0 @@
-# Macro file for the initialization of example B4
-# in interactive session
-
-# Initialize kernel
-/run/initialize
-
-# Visualization setting
-/control/execute vis.mac
-
