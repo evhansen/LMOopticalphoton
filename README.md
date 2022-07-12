@@ -78,3 +78,9 @@ note, for troubleshooting:
 		1: 1.17 MeV
 		2: 1.33 MeV
 		else: both
+
+
+
+note, iMom is always primary's (seconds get 0,0,0)
+
+TODO: fix scintillation
