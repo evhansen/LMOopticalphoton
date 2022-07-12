@@ -16,24 +16,44 @@ RunAction::RunAction()
 	
 	analysisManager->SetVerboseLevel(1);
 	analysisManager->SetNtupleMerging(true);
-	
+
+	//https://geant4.web.cern.ch/sites/default/files/geant4/collaboration/working_groups/electromagnetic/gallery/units/SystemOfUnits.html
+
 	analysisManager->CreateNtuple("LDHit", "Edep, SD, and Position");
 	
+	analysisManager->CreateNtupleFColumn("iEnergyMeV"); 
 	
-	analysisManager->CreateNtupleDColumn("Eabs"); 
+	analysisManager->CreateNtupleDColumn("EabsMeV");
+ 
 	analysisManager->CreateNtupleIColumn("PhysVolNum"); 
 
-	analysisManager->CreateNtupleFColumn("xiPos"); 
-	analysisManager->CreateNtupleFColumn("yiPos"); 
-	analysisManager->CreateNtupleFColumn("ziPos"); 
+	analysisManager->CreateNtupleFColumn("xiPosmm"); 
+	analysisManager->CreateNtupleFColumn("yiPosmm"); 
+	analysisManager->CreateNtupleFColumn("ziPosmm"); 
 
-	analysisManager->CreateNtupleFColumn("xfPos"); 
-	analysisManager->CreateNtupleFColumn("yfPos"); 
-	analysisManager->CreateNtupleFColumn("zfPos"); 
+	// hit class
+	analysisManager->CreateNtupleFColumn("xfPoshmm"); 
+	analysisManager->CreateNtupleFColumn("yfPoshmm"); 
+	analysisManager->CreateNtupleFColumn("zfPoshmm"); 
 	
-	analysisManager->CreateNtupleIColumn("PDGID"); 
+	// from event primary vertex
+	analysisManager->CreateNtupleFColumn("xiPosPVmm"); 
+	analysisManager->CreateNtupleFColumn("yiPosPVmm"); 
+	analysisManager->CreateNtupleFColumn("ziPosPVmm"); 
 
-	//TODO: add parent particle for secondaries
+	analysisManager->CreateNtupleIColumn("PID"); 
+
+	analysisManager->CreateNtupleFColumn("xiMom"); 
+	analysisManager->CreateNtupleFColumn("yiMom"); 
+	analysisManager->CreateNtupleFColumn("ziMom"); 
+
+	analysisManager->CreateNtupleFColumn("xfMom"); 
+	analysisManager->CreateNtupleFColumn("yfMom"); 
+	analysisManager->CreateNtupleFColumn("zfMom"); 
+
+	analysisManager->CreateNtupleIColumn("EventID"); 
+	analysisManager->CreateNtupleIColumn("TrackID"); 
+	analysisManager->CreateNtupleIColumn("ParentID"); 
 
 
 	analysisManager->FinishNtuple();

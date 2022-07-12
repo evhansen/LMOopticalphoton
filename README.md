@@ -44,8 +44,8 @@ TODO: change "lmo" to "crys" everywhere ... teo2 is sad.
 
     char prng; // if 'c', C PRNG, otherwise G4 PRNG
 
-    char lmos; 	// if 1, LMO exists
-   		// if 2, LMO exists and is a sensitive detector 
+    char lmos; 	// if e, LMO exists
+   		// if s, LMO exists and is a sensitive detector 
 		// else, not
 
 TODO: float crysd; // cubic crystal dimension (in mm)
@@ -57,10 +57,30 @@ TODO: float crysd; // cubic crystal dimension (in mm)
     float arct; // thickness of antireflective coating (in mm)
 
     char face1; char face2; char face3; char face4; char face5; char face6;
-    // 0 is nothing, 1 is an LD, and 2 is an EM
+    // l is an LD, and e is an EM, else nothing
 
-    char crysmat; // switch lmo, teo2  
-    char ldmat; // 1 is Si, else Ge
-    char emat; // 1 is Cu, m is mysterious (ooOoOOo),  else Al
+    char crysmat; // t is teo2, else lmo
+    char ldmat; // s is Si, else Ge
+    char emat; // c is Cu, m is mysterious (ooOoOOo),  else Al
     char arcmat; // switch sio2, sio, and nb2o5 
 
+
+
+
+
+note, for troubleshooting:
+	options/misc
+		b: beta
+		g: gamma
+		else: muon
+
+	options/gamma
+		1: 1.17 MeV
+		2: 1.33 MeV
+		else: both
+
+
+
+note, iMom is always primary's (seconds get 0,0,0)
+
+TODO: fix scintillation

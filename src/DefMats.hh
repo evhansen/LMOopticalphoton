@@ -2,6 +2,7 @@
 static int BOM = 0; // 0 if BOM needs to be removed, else do not remove.
 
 
+static char readExtFile(const char* filename);
 float* readCSV(const char* filename, char delimiter,int*cols,int*rows);
 
 
@@ -10,7 +11,7 @@ float* readCSV(const char* filename, char delimiter,int*cols,int*rows);
 void DetectorConstruction::DefineWorldM(char mat){
 	G4int numentries = 4;
 
-	G4double energies[4] = {2.0*eV, 3.0*eV, 4.0*eV,100*MeV};
+	G4double energies[4] = {1.0*eV, 3.0*eV, 4.0*eV,100*GeV};
 	G4double a,z,density, iz;
 	G4String name= "";
 	G4String symbol = "";
@@ -26,7 +27,7 @@ void DetectorConstruction::DefineWorldM(char mat){
 	G4double abslength[4]={200*mm,200*mm,200*mm,200*mm};
 
 	fWorldMPT->AddProperty("RINDEX", energies, rindex, numentries);
-	//fWorldMPT->AddProperty("ABSLENGTH", energies, abslength, numentries);
+	fWorldMPT->AddProperty("ABSLENGTH", energies, abslength, numentries);
 
 
 	WorldMaterial = G4NistManager::Instance()->FindOrBuildMaterial("Vacuum");
@@ -48,7 +49,7 @@ void DetectorConstruction::DefineWorldM(char mat){
 void DetectorConstruction::DefineCrysM(char mat){
 	G4int numentries = 4;
 
-	G4double energies[4] = {2.0*eV, 3.0*eV, 4.0*eV,100*MeV};
+	G4double energies[4] = {1.0*eV, 3.0*eV, 4.0*eV,100*GeV};
 	G4double a,z,density, iz;
 	G4String name= "";
 	G4String symbol = "";
@@ -62,7 +63,8 @@ void DetectorConstruction::DefineCrysM(char mat){
 
 	G4MaterialPropertiesTable* fLMOMPT = new G4MaterialPropertiesTable();	
 
-	if(false){
+
+	if(mat == 't'){
 
 		G4Element* elTe = G4NistManager::Instance()
 			->FindOrBuildElement(52, false);
@@ -83,7 +85,7 @@ void DetectorConstruction::DefineCrysM(char mat){
 		abslength[0] = 5*mm; abslength[1] = 5*mm;
 		abslength[2] = 5*mm; abslength[3] = 80*cm;
 
-		if(false){
+		if(readExtFile("./options/teo2rndx") == 'o'){
 
 			vals = readCSV("./options/teo2-norindex.csv",',',&cols,&rows);
 
@@ -138,7 +140,16 @@ void DetectorConstruction::DefineCrysM(char mat){
 
 		fLMOMPT->AddProperty("RINDEX", energies, rindex, numentries);
 		fLMOMPT->AddProperty("REALRINDEX", energies, rindex, numentries);
-	}
+		
+		std::vector<G4double> en = {1.*eV,100.*GeV };
+		std::vector<G4double> eyield = {250.,250.};// 0.65keV/MeV ~2.6
+		std::vector<G4double> ayield = {38.,38.};// 0.1keV/Mev ~2.6
+
+		fLMOMPT->AddConstProperty("SCINTILLATIONYIELD",100000./MeV); // gammas
+
+		//fLMOMPT->AddProperty("ALPHASCINTILLATIONYIELD",en,ayield); 
+		//fLMOMPT->AddProperty("ELECTRONSCINTILLATIONYIELD",en,eyield);
+ 	}
 
 	fLMOMPT->AddProperty("ABSLENGTH", energies, abslength, numentries);
 	LMOMaterial->SetMaterialPropertiesTable(fLMOMPT);
@@ -196,7 +207,7 @@ void DetectorConstruction::DefineLDM(char mat){
 
 	G4double Rrindex[4], Irindex[4];
 
-	if(mat == '1'){
+	if(mat == 's'){
 		new G4Material(name="Silicon", 
 				z=14.0, a=28.0855*g/mole, density=2.33*g/cm3);
 
@@ -366,7 +377,7 @@ void DetectorConstruction::DefineEMM(char mat){
 
 	G4MaterialPropertiesTable* EMMPT = new G4MaterialPropertiesTable();
 
-	if(mat == '1'){
+	if(mat == 'c'){
 
 		EMMaterial = G4NistManager::Instance()
 			->FindOrBuildMaterial("G4_Cu");

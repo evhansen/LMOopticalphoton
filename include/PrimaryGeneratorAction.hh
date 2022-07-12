@@ -1,3 +1,4 @@
+
 #ifndef PrimaryGeneratorAction_h
 #define PrimaryGeneratorAction_h 1
 
@@ -5,9 +6,23 @@
 #include "G4ParticleGun.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 
+#include "G4SystemOfUnits.hh"
+#include "G4Electron.hh"
+#include "G4Positron.hh"
+#include "G4MuonMinus.hh"
+#include "G4MuonPlus.hh"
+#include "G4Gamma.hh"
+#include "G4OpticalPhoton.hh"
+#include "G4ParticleTable.hh"
+
+#include <random>
+#include <chrono>
+
+
 class G4Event;
 class PrimaryGeneratorMessenger;
 class DetectorConstruction;
+
 
 class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 {
@@ -29,6 +44,7 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
  private:
 
   char prng; // if 'c' use C PRNG else use G4 PRNG
+  char misc;
 
   G4ParticleGun* fParticleSource;
 
@@ -43,18 +59,18 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
   // to undergo and num is the number of particles generated 
   // in one iteration of the process; TODO: get rid of num 
 
-  void RectanglePlateSource(G4int tot,G4int num,G4double PSHalfSizes[],G4double PSPos[],void (*Process)(float[],float[],G4Event*,G4ParticleGun*),G4Event* anEvent);
+  void RectanglePlateSource(G4int tot,G4int num,G4double PSHalfSizes[],G4double PSPos[],void (*Process)(float[],float[],G4Event*,G4ParticleGun*,char),G4Event* anEvent,char swch = 0);
   
-  void CircularPlateSource(G4int tot,G4int num,G4double Radius,G4double PSPos[],void (*Process)(float[],float[],G4Event*,G4ParticleGun*),G4Event* anEvent);
+  void CircularPlateSource(G4int tot,G4int num,G4double Radius,G4double PSPos[],void (*Process)(float[],float[],G4Event*,G4ParticleGun*,char),G4Event* anEvent,char swch = 0);
  
   // *********
   // Define the constituents of a single 
   // iteration of the processes
   // *********
  
-  static void Cobalt60(float ConstituentPos[],float ConstituentDir[],G4Event* anEvent,G4ParticleGun*PG);
+  static void Cobalt60(float ConstituentPos[],float ConstituentDir[],G4Event* anEvent,G4ParticleGun*PG,char swch);
   
-  static void CosmogenicMuons(float ConstituentPos[],float ConstituentDir[],G4Event* anEvent,G4ParticleGun*PG);
+  static void CosmogenicMuons(float ConstituentPos[],float ConstituentDir[],G4Event* anEvent,G4ParticleGun*PG,char swch);
  
 
   // Misc
@@ -65,7 +81,11 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
   G4bool fRandomInLMO1;
   G4bool fPolarized;
   G4double fPolarization;
+
 };
 
-#endif /*PrimaryGeneratorAction_h*/
 
+
+
+
+#endif /*PrimaryGeneratorAction_h*/

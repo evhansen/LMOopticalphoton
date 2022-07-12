@@ -12,7 +12,7 @@ G4VPhysicalVolume* DetectorConstruction::DefineCrys(G4double LMOHalfSizes[]){
 	
 	char lmos = readExtFile("./options/lmos");
 
-	if(lmos == '1' || lmos == '2'){ // LMO exists 
+	if(lmos == 'e' || lmos == 's'){ // LMO exists 
 		Mpnt = LMOMaterial;
 	} else { // LMO doesn't exist
 		Mpnt = WorldMaterial;
@@ -24,7 +24,7 @@ G4VPhysicalVolume* DetectorConstruction::DefineCrys(G4double LMOHalfSizes[]){
 	Mpnt,    // its material
 	"LMO_primary");          // its name
 
-	if(lmos == '1' || lmos == '2'){ // LMO exists 
+	if(lmos == 'e' || lmos == 's'){ // LMO exists 
 		G4VisAttributes* LMOVA = new G4VisAttributes();
 		LMOVA->SetColor(1.0,1.0,0.0,0.3);
 		LMOVA->SetForceSolid(true);
@@ -99,7 +99,7 @@ G4VPhysicalVolume** IV1,G4VPhysicalVolume** IV2,G4VPhysicalVolume** IV3,G4VPhysi
 
 	// I know that this is ugly .... will change after it functions as intended
 	
-	if (face1 == '2'){
+	if (face1 == 'e'){
 			
 		if(IVHalfSizes[3] > 0){
 			*IV1 = new G4PVPlacement(
@@ -129,7 +129,7 @@ G4VPhysicalVolume** IV1,G4VPhysicalVolume** IV2,G4VPhysicalVolume** IV3,G4VPhysi
 		}	
 	}
 
-	if (face2 == '2'){
+	if (face2 == 'e'){
 		
 		if(IVHalfSizes[3] > 0){
 			*IV2 = new G4PVPlacement(
@@ -159,7 +159,7 @@ G4VPhysicalVolume** IV1,G4VPhysicalVolume** IV2,G4VPhysicalVolume** IV3,G4VPhysi
 		}
 	}
 
-	if (face3 == '2'){
+	if (face3 == 'e'){
 		
 		if(IVHalfSizes[3] > 0){
 			*IV3 = new G4PVPlacement(
@@ -189,7 +189,7 @@ G4VPhysicalVolume** IV1,G4VPhysicalVolume** IV2,G4VPhysicalVolume** IV3,G4VPhysi
 		}
 	}
 
-	if (face4 == '2'){
+	if (face4 == 'e'){
 		
 		if(IVHalfSizes[3] > 0){
 			*IV4 = new G4PVPlacement(
@@ -219,7 +219,7 @@ G4VPhysicalVolume** IV1,G4VPhysicalVolume** IV2,G4VPhysicalVolume** IV3,G4VPhysi
 		}
 	}
 
-	if (face5 == '2'){
+	if (face5 == 'e'){
 		
 		if(IVHalfSizes[3] > 0){
 			*IV5 = new G4PVPlacement(
@@ -249,7 +249,7 @@ G4VPhysicalVolume** IV1,G4VPhysicalVolume** IV2,G4VPhysicalVolume** IV3,G4VPhysi
 		}
 	}
 
-	if (face6 == '2'){
+	if (face6 == 'e'){
 		
 		if(IVHalfSizes[3] > 0){
 			*IV6 = new G4PVPlacement(
@@ -314,7 +314,7 @@ G4VPhysicalVolume** LD1,G4VPhysicalVolume** LD2,G4VPhysicalVolume** LD3,G4VPhysi
 	simpleBoxVisAtt->SetVisibility(true);
 	LightDetectorLV->SetVisAttributes(simpleBoxVisAtt);
 
-	if(face1 == '1'){
+	if(face1 == 'l'){
 		*LD1 = new G4PVPlacement(
 		0,                // no rotation
 		G4ThreeVector(LDPos[0],
@@ -327,7 +327,7 @@ G4VPhysicalVolume** LD1,G4VPhysicalVolume** LD2,G4VPhysicalVolume** LD3,G4VPhysi
 		fCheckOverlaps);  // checking overlaps
 	}
 	
-	if(face2 == '1'){
+	if(face2 == 'l'){
 		*LD2 = new G4PVPlacement(
 		0,                // no rotation
 		G4ThreeVector(LDPos[3],
@@ -340,7 +340,7 @@ G4VPhysicalVolume** LD1,G4VPhysicalVolume** LD2,G4VPhysicalVolume** LD3,G4VPhysi
 		fCheckOverlaps);  // checking overlaps
 	}
 
-	if(face3 == '1'){
+	if(face3 == 'l'){
 		*LD3 = new G4PVPlacement(
 		t1,                //
 		G4ThreeVector(LDPos[6],
@@ -353,7 +353,7 @@ G4VPhysicalVolume** LD1,G4VPhysicalVolume** LD2,G4VPhysicalVolume** LD3,G4VPhysi
 		fCheckOverlaps);  // checking overlaps
 	}
 
-	if(face4 == '1'){
+	if(face4 == 'l'){
 		*LD4 = new G4PVPlacement(
 		t1,                //
 		G4ThreeVector(LDPos[9],
@@ -366,7 +366,7 @@ G4VPhysicalVolume** LD1,G4VPhysicalVolume** LD2,G4VPhysicalVolume** LD3,G4VPhysi
 		fCheckOverlaps);  // checking overlaps
 	}
 
-	if(face5 == '1'){
+	if(face5 == 'l'){
 		*LD5 = new G4PVPlacement(
 		p1,                // no rotation
 		G4ThreeVector(LDPos[12],
@@ -379,7 +379,7 @@ G4VPhysicalVolume** LD1,G4VPhysicalVolume** LD2,G4VPhysicalVolume** LD3,G4VPhysi
 		fCheckOverlaps);  // checking overlaps
 	}
 	
-	if(face6 == '1'){
+	if(face6 == 'l'){
 		*LD6 = new G4PVPlacement(
 		p1,                // no rotation
 		G4ThreeVector(LDPos[15],
@@ -426,7 +426,7 @@ G4VPhysicalVolume** EM1,G4VPhysicalVolume** EM2,G4VPhysicalVolume** EM3,G4VPhysi
 	EMVA->SetForceLineSegmentsPerCircle(4);
 	EMLV->SetVisAttributes(EMVA);
 
-	if(face1 == '2'){
+	if(face1 == 'e'){
 		*EM1 = new G4PVPlacement(
 		0,                // no rotation
 		G4ThreeVector(EMPos[0],
@@ -439,7 +439,7 @@ G4VPhysicalVolume** EM1,G4VPhysicalVolume** EM2,G4VPhysicalVolume** EM3,G4VPhysi
 		fCheckOverlaps);  // checking overlaps
 	}
 	
-	if(face2 == '2'){
+	if(face2 == 'e'){
 		*EM2 = new G4PVPlacement(
 		0,                // no rotation
 		G4ThreeVector(EMPos[3],
@@ -452,7 +452,7 @@ G4VPhysicalVolume** EM1,G4VPhysicalVolume** EM2,G4VPhysicalVolume** EM3,G4VPhysi
 		fCheckOverlaps);  // checking overlaps
 	}
 	
-	if(face3 == '2'){
+	if(face3 == 'e'){
 		*EM3 = new G4PVPlacement(
 		t1,                //
 		G4ThreeVector(EMPos[6],
@@ -465,7 +465,7 @@ G4VPhysicalVolume** EM1,G4VPhysicalVolume** EM2,G4VPhysicalVolume** EM3,G4VPhysi
 		fCheckOverlaps);  // checking overlaps
 	}
 
-	if(face4 == '2'){
+	if(face4 == 'e'){
 		*EM4 = new G4PVPlacement(
 		t1,                //
 		G4ThreeVector(EMPos[9],
@@ -478,7 +478,7 @@ G4VPhysicalVolume** EM1,G4VPhysicalVolume** EM2,G4VPhysicalVolume** EM3,G4VPhysi
 		fCheckOverlaps);  // checking overlaps
 	}
 
-	if(face5 == '2'){
+	if(face5 == 'e'){
 		*EM5 = new G4PVPlacement(
 		p1,                //
 		G4ThreeVector(EMPos[12],
@@ -491,7 +491,7 @@ G4VPhysicalVolume** EM1,G4VPhysicalVolume** EM2,G4VPhysicalVolume** EM3,G4VPhysi
 		fCheckOverlaps);  // checking overlaps
 	}
 	
-	if(face6 == '2'){
+	if(face6 == 'e'){
 		*EM6 = new G4PVPlacement(
 		p1,                //
 		G4ThreeVector(EMPos[15],

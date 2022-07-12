@@ -1,41 +1,92 @@
 
+#include "PrimaryGeneratorAction.hh"
+
+
+static char readExtFile(const char* filename);
+void appendP(std::string filename, std::string line);
+static std::string readExtFileLine(const char* filename);
+
+
+
+
+
 //Rejection sampling
 
-void PrimaryGeneratorAction::Cobalt60(float ConstituentPos[],float ConstituentDir[],G4Event* anEvent,G4ParticleGun*PG){
+void PrimaryGeneratorAction::Cobalt60(float ConstituentPos[],float ConstituentDir[],G4Event* anEvent,G4ParticleGun*PG,char swch){
 	//99.88% of the radiation will be a 0.31 MeV e-, 1.17 MeV g, and 1.33 MeV g.
 	
-	PG->SetParticleEnergy(0.31*MeV);
-	PG->SetParticleDefinition(G4Electron::Definition());
-	PG->SetParticlePosition(G4ThreeVector(ConstituentPos[0]*m, ConstituentPos[1]*m, ConstituentPos[2]*m));
-	PG->SetParticleMomentumDirection(G4ThreeVector(ConstituentDir[0], ConstituentDir[1], ConstituentDir[2]));
-	
-	PG->GeneratePrimaryVertex(anEvent);
-	
-	
-	PG->SetParticleEnergy(1.17*MeV);
-	PG->SetParticleDefinition(G4Gamma::Definition());
-	PG->SetParticlePosition(G4ThreeVector(ConstituentPos[3]*m, ConstituentPos[4]*m, ConstituentPos[5]*m));
-	PG->SetParticleMomentumDirection(G4ThreeVector(ConstituentDir[3], ConstituentDir[4], ConstituentDir[5]));
-	
-	PG->GeneratePrimaryVertex(anEvent);
-	
-	
-	PG->SetParticleEnergy(1.33*MeV);
-	PG->SetParticleDefinition(G4Gamma::Definition());
-	PG->SetParticlePosition(G4ThreeVector(ConstituentPos[6]*m, ConstituentPos[7]*m, ConstituentPos[8]*m));
-	PG->SetParticleMomentumDirection(G4ThreeVector(ConstituentDir[6], ConstituentDir[7], ConstituentDir[8]));
-	
-	PG->GeneratePrimaryVertex(anEvent);
+	static std::string fname = "./data/" + readExtFileLine("./options/name");
+
+	if(swch == '1'){	
+		PG->SetParticleEnergy(1.17*MeV);
+		PG->SetParticleDefinition(G4Gamma::Definition());
+		PG->SetParticlePosition(G4ThreeVector(ConstituentPos[3]*m, ConstituentPos[4]*m, ConstituentPos[5]*m));
+		PG->SetParticleMomentumDirection(G4ThreeVector(ConstituentDir[3], ConstituentDir[4], ConstituentDir[5]));
+			
+		PG->GeneratePrimaryVertex(anEvent);
+
+
+		appendP(fname, 
+	std::to_string(anEvent->GetEventID())  
+	+ "," + std::to_string(ConstituentDir[3]) 
+	+ "," + std::to_string(ConstituentDir[4]) 
+	+ "," + std::to_string(ConstituentDir[5])
+	+ "," + std::to_string(ConstituentPos[3]) 
+	+ "," + std::to_string(ConstituentPos[4]) 
+	+ "," + std::to_string(ConstituentPos[5]));
+
+		
+	} else if (swch == '2'){
+		PG->SetParticleEnergy(1.33*MeV);
+		PG->SetParticleDefinition(G4Gamma::Definition());
+		PG->SetParticlePosition(G4ThreeVector(ConstituentPos[6]*m, ConstituentPos[7]*m, ConstituentPos[8]*m));
+		PG->SetParticleMomentumDirection(G4ThreeVector(ConstituentDir[6], ConstituentDir[7], ConstituentDir[8]));
+			
+		PG->GeneratePrimaryVertex(anEvent);
+
+
+		appendP(fname, 
+	std::to_string(anEvent->GetEventID()) 
+	+ "," + std::to_string(ConstituentDir[6]) 
+	+ "," + std::to_string(ConstituentDir[7]) 
+	+ "," + std::to_string(ConstituentDir[8])
+	+ "," + std::to_string(ConstituentPos[6]) 
+	+ "," + std::to_string(ConstituentPos[7]) 
+	+ "," + std::to_string(ConstituentPos[8]));
+
+
+	} else { // beta
+
+		PG->SetParticleEnergy(0.31*MeV);
+		PG->SetParticleDefinition(G4Electron::Definition());
+		PG->SetParticlePosition(G4ThreeVector(ConstituentPos[0]*m, ConstituentPos[1]*m, ConstituentPos[2]*m));
+		PG->SetParticleMomentumDirection(G4ThreeVector(ConstituentDir[0], ConstituentDir[1], ConstituentDir[2]));
+		
+		PG->GeneratePrimaryVertex(anEvent);
+
+
+		appendP(fname, 
+	std::to_string(anEvent->GetEventID())
+	+ "," + std::to_string(ConstituentDir[0]) 
+	+ "," + std::to_string(ConstituentDir[1]) 
+	+ "," + std::to_string(ConstituentDir[2])
+	+ "," + std::to_string(ConstituentPos[0]) 
+	+ "," + std::to_string(ConstituentPos[1]) 
+	+ "," + std::to_string(ConstituentPos[2]));
+
+
+	}
+
 }
 
 
 
 
-
-void PrimaryGeneratorAction::CosmogenicMuons(float ConstituentPos[],float ConstituentDir[],G4Event* anEvent,G4ParticleGun*PG){
+void PrimaryGeneratorAction::CosmogenicMuons(float ConstituentPos[],float ConstituentDir[],G4Event* anEvent,G4ParticleGun*PG,char swch){
 	//The muons will be 0.2-1000 GeV
 	//ratio of m+/m- ~ 1.268 +/- (0.008 + 0.0002 p) where p is momentum.
 	// https://doi.org/10.1016/0370-2693(71)90741-6
+
 
 	static std::default_random_engine eng; //meh
 	std::discrete_distribution<> d {125,121,360,259,96,6030,224,270,524,537,685,471,337,292,7670,6470,5931,3754,1767,613,198,49,11}; //23 vals
@@ -112,19 +163,41 @@ void PrimaryGeneratorAction::CosmogenicMuons(float ConstituentPos[],float Consti
 		PG->SetParticleDefinition(G4MuonMinus::Definition());
 	}
 	
-	
-	PG->SetParticlePosition(G4ThreeVector(ConstituentPos[0]*m, ConstituentPos[1]*m, ConstituentPos[2]*m));
-	PG->SetParticleMomentumDirection(G4ThreeVector(ConstituentDir[0], ConstituentDir[1], ConstituentDir[2]));
+	PG->SetParticlePosition(G4ThreeVector(
+			ConstituentPos[0]*m, 
+			ConstituentPos[1]*m, 
+			ConstituentPos[2]*m));
+	PG->SetParticleMomentumDirection(G4ThreeVector(
+			ConstituentDir[0], 
+			ConstituentDir[1], 
+			ConstituentDir[2]));
 	
 	
 	PG->GeneratePrimaryVertex(anEvent);
+
+
+	static std::string fname = "./data/" + readExtFileLine("./options/name");
+
+	appendP(fname,	
+	std::to_string(anEvent->GetEventID()) 
+	+ "," + std::to_string(ConstituentDir[0]) 
+	+ "," + std::to_string(ConstituentDir[1]) 
+	+ "," + std::to_string(ConstituentDir[2])
+	+ "," + std::to_string(ConstituentPos[0]) 
+	+ "," + std::to_string(ConstituentPos[1]) 
+	+ "," + std::to_string(ConstituentPos[2]));
+
 }
 
-	
+
+
+
+
+
 // tot: number of decays
 // num: number of constituent particles .. YES I KNOW, DUMB REEEEEEEEEE
 
-void PrimaryGeneratorAction::RectanglePlateSource(G4int tot,G4int num,G4double PSHalfSizes[],G4double PSPos[],void (*Process)(float[],float[],G4Event*,G4ParticleGun*),G4Event* anEvent){
+void PrimaryGeneratorAction::RectanglePlateSource(G4int tot,G4int num,G4double PSHalfSizes[],G4double PSPos[],void (*Process)(float[],float[],G4Event*,G4ParticleGun*,char),G4Event* anEvent,char swch){
 	
 	float ConstituentPos[num*3];
 	float ConstituentDir[num*3];
@@ -172,7 +245,7 @@ void PrimaryGeneratorAction::RectanglePlateSource(G4int tot,G4int num,G4double P
 			}
 		}
 
-		Process(ConstituentPos,ConstituentDir,anEvent,fParticleSource); // num us encoded in the Process
+		Process(ConstituentPos,ConstituentDir,anEvent,fParticleSource,swch); // num us encoded in the Process
 	}
 	
 }
@@ -181,7 +254,7 @@ void PrimaryGeneratorAction::RectanglePlateSource(G4int tot,G4int num,G4double P
 
 
 
-void PrimaryGeneratorAction::CircularPlateSource(G4int tot,G4int num,G4double Radius,G4double PSPos[],void (*Process)(float[],float[],G4Event*,G4ParticleGun*),G4Event* anEvent){
+void PrimaryGeneratorAction::CircularPlateSource(G4int tot,G4int num,G4double Radius,G4double PSPos[],void (*Process)(float[],float[],G4Event*,G4ParticleGun*,char),G4Event* anEvent,char swch){
 	
 	float ConstituentPos[num*3];
 	float ConstituentDir[num*3];
@@ -202,11 +275,10 @@ void PrimaryGeneratorAction::CircularPlateSource(G4int tot,G4int num,G4double Ra
 				 
 				
 				//want U(-1,1) x,y:   -1 + x (1 - (-1))   :   -1 + 2x
-				//want U(-1,0) z:   -1 + x (0 - (-1))   :   -1 + x
 				vx = -1 + 2*((float)rand()/RAND_MAX);
 				vy = -1 + 2*((float)rand()/RAND_MAX);
 
-				//vz = -1 + ((float)rand()/RAND_MAX);
+				//U(0,1) ~ vz = ((float)rand()/RAND_MAX);
 				vz = ((float)rand()/RAND_MAX);
 				
 				ConstituentDir[j] = vx / std::sqrt((vx*vx)+(vy*vy)+(vz*vz));
@@ -229,7 +301,6 @@ void PrimaryGeneratorAction::CircularPlateSource(G4int tot,G4int num,G4double Ra
 				vx = -1 + 2*G4UniformRand();
 				vy = -1 + 2*G4UniformRand();
 			
-				//vz = -1 + G4UniformRand();
 				vz = G4UniformRand();
 	
 				ConstituentDir[j] = vx / std::sqrt((vx*vx)+(vy*vy)+(vz*vz));
@@ -241,13 +312,39 @@ void PrimaryGeneratorAction::CircularPlateSource(G4int tot,G4int num,G4double Ra
 			}
 		}
 		
-		Process(ConstituentPos,ConstituentDir,anEvent,fParticleSource); // num us encoded in the Process
+		Process(ConstituentPos,ConstituentDir,anEvent,fParticleSource,swch); // num is encoded in the Process
 	}
 }
 
 
 
 
+
+
+char readExtFile(const char* filename){
+	FILE *p = fopen(filename,"r");
+	if(p == NULL){return '0';}
+	return fgetc(p);
+}
+
+void appendP(std::string filename, std::string line){
+	std::ofstream p;
+	p.open(filename.c_str(),std::ios_base::app);
+	p << line << "\n";
+	p.close();
+}
+
+std::string readExtFileLine(const char* filename){
+
+	std::string out;
+	std::ifstream p;
+
+	p.open(filename);
+
+	std::getline(p,out);
+
+	return out;
+}
 
 
 

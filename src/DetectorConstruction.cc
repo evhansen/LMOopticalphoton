@@ -86,8 +86,8 @@ void DetectorConstruction::DefineMaterials()
 {
 	char ldmat = readExtFile("./options/ldmat");
 	char emat = readExtFile("./options/emat");
-	//char crysmat = readExtFile("./options/crysmat");
-	//arcmat = readExtFile("./options/arcmat");
+	char crysmat = readExtFile("./options/crysmat");
+	//char arcmat = readExtFile("./options/arcmat");
 	
 	// optical surface MPT (because of k -.-)
 	LDk = new G4MaterialPropertiesTable();
@@ -101,7 +101,7 @@ void DetectorConstruction::DefineMaterials()
 	
 	DefineWorldM();	
 
-	DefineCrysM();
+	DefineCrysM(crysmat);
 
 	DefineLDM(ldmat);
 
@@ -264,63 +264,63 @@ void DetectorConstruction::DefineVolumes()
 
 	
 	// Yeah, yeah, refactored later
-	if(face1 == '1'){ //face1 has an LD
+	if(face1 == 'l'){ //face1 has an LD
 		IVPos[2] = (LDgap / 2) + LMOHalfSizes[2]; 
 
-	} else if(face1 == '2'){ //face1 has an EM	
+	} else if(face1 == 'e'){ //face1 has an EM	
 		IVPos[2] = (EMgap / 2) + LMOHalfSizes[2]; 
 
-	} else if(face1 == '0'){ //face 1 has nothing
+	} else { //face 1 has nothing
 		IVPos[2] = LMOHalfSizes[2]; 
 	}
 
-	if(face2 == '1'){ //LD
+	if(face2 == 'l'){ //LD
 		IVPos[5] = -(LDgap / 2) - LMOHalfSizes[2];
 
-	} else if(face2 == '2'){ // EM
+	} else if(face2 == 'e'){ // EM
 		IVPos[5] = -(EMgap / 2) - LMOHalfSizes[2];
 
-	} else if(face2 == '0'){ //nothing
+	} else { //nothing
 		IVPos[5] = - LMOHalfSizes[2];
 	}
 
-	if(face3 == '1'){ //LD
+	if(face3 == 'l'){ //LD
 		IVPos[7] = -(LDgap / 2) - LMOHalfSizes[1]; 
 
-	} else if(face3 == '2'){ // EM
+	} else if(face3 == 'e'){ // EM
 		IVPos[7] = -(EMgap / 2) - LMOHalfSizes[1]; 
 
-	} else if(face3 == '0'){ //nothing
+	} else { //nothing
 		IVPos[7] = - LMOHalfSizes[1]; 
 	}
 
-	if(face4 == '1'){ //LD
+	if(face4 == 'l'){ //LD
 		IVPos[10] = (LDgap / 2) + LMOHalfSizes[1];
 
-	} else if(face4 == '2'){ // EM
+	} else if(face4 == 'e'){ // EM
 		IVPos[10] = (EMgap / 2) + LMOHalfSizes[1]; 
 
-	} else if(face4 == '0'){ //nothing
+	} else {//nothing
 		IVPos[10] = LMOHalfSizes[1]; 
 	}
 
-	if(face5 == '1'){ //LD
+	if(face5 == 'l'){ //LD
 		IVPos[12] = -(LDgap / 2) - LMOHalfSizes[0]; 
 
-	} else if(face4 == '2'){ // EM
+	} else if(face4 == 'e'){ // EM
 		IVPos[12] = -(EMgap / 2) - LMOHalfSizes[0];
 
-	} else if(face4 == '0'){ //nothing
+	} else { //nothing
 		IVPos[12] = - LMOHalfSizes[0];
 	}
 
-	if(face6 == '1'){ //LD
+	if(face6 == 'l'){ //LD
 		IVPos[15] = (LDgap / 2) + LMOHalfSizes[0];
 
-	} else if(face4 == '2'){ // EM
+	} else if(face4 == 'e'){ // EM
 		IVPos[15] = (EMgap / 2) + LMOHalfSizes[0];
 
-	} else if(face4 == '0'){ //nothing
+	} else { //nothing
 		IVPos[15] = LMOHalfSizes[0];
 	}
 
@@ -388,14 +388,14 @@ void DetectorConstruction::ConstructSDandField()
 	G4SDManager::GetSDMpointer()->AddNewDetector(fLDSD);
 
 
-	if(lmos == '2'){
+	if(lmos == 's'){
 		SetSensitiveDetector("LMO_primary",fLDSD);
 	
 		G4cout << "LMO sensitive" << G4endl;
 	}
 	
 	
-	if(face1 == '1' || face2 == '1' || face3 == '1' || face4 == '1' || face5 == '1' || face6 == '1'){
+	if(face1 == 'l' || face2 == 'l' || face3 == 'l' || face4 == 'l' || face5 == 'l' || face6 == 'l'){
 		SetSensitiveDetector("LDLV",fLDSD); // LDs sensitive
 	
 		G4cout << "LDs sensitive" << G4endl;
@@ -425,7 +425,6 @@ char readExtFile(const char* filename){
 	return out;
 
 }
-
 
 std::string readExtFileLine(const char* filename){
 	std::string out;

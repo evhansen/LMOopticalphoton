@@ -42,22 +42,17 @@
 
 # Many other options are available with /vis/modeling and /vis/filtering.
 # For example, to select colour by particle ID:
-/vis/modeling/trajectories/create/drawByParticleID
+#/vis/modeling/trajectories/create/drawByParticleID
 #/vis/modeling/trajectories/drawByParticleID-0/default/setDrawStepPts true
 # To select or override default colours (note: e+ is blue by default):
 #/vis/modeling/trajectories/list
 
-/vis/modeling/trajectories/drawByParticleID-0/set e+ yellow
-/vis/modeling/trajectories/drawByParticleID-0/set e- red
-/vis/modeling/trajectories/drawByParticleID-0/set proton orange
+#/vis/modeling/trajectories/drawByParticleID-0/set e+ yellow
+#/vis/modeling/trajectories/drawByParticleID-0/set e- red
+#/vis/modeling/trajectories/drawByParticleID-0/set proton gray
 
-/vis/modeling/trajectories/drawByParticleID-0/set gamma blue
-/vis/modeling/trajectories/drawByParticleID-0/set opticalphoton green
-
-
-/vis/modeling/trajectories/drawByParticleID-0/set muonminus cyan
-/vis/modeling/trajectories/drawByParticleID-0/set muonplus pink
-
+#/vis/modeling/trajectories/drawByParticleID-0/set gamma blue
+#/vis/modeling/trajectories/drawByParticleID-0/set opticalphoton green
 
 
 # To superimpose all of the events from a given run:

@@ -27,6 +27,8 @@ class DetectorConstruction : public G4VUserDetectorConstruction
     G4VPhysicalVolume* DefineWorld();
     void DefineVolumes();
 
+
+
     // *******************
     // For defining materials
     // *******************

@@ -10,6 +10,19 @@
 #include "Randomize.hh"
 #include <iomanip>
 
+#include "G4SystemOfUnits.hh"
+#include "G4ParticleDefinition.hh"
+#include "G4Electron.hh"
+#include "G4Positron.hh"
+#include "G4MuonMinus.hh"
+#include "G4MuonPlus.hh"
+#include "G4Gamma.hh"
+#include "G4OpticalPhoton.hh"
+
+
+static int ParticleID(const G4ParticleDefinition*);
+
+
 EventAction::EventAction()
 : G4UserEventAction()
 ,fAbsHCID(-1)
@@ -49,7 +62,6 @@ G4double absoEdep//, G4double absoTrackLength
 
 void EventAction::BeginOfEventAction(const G4Event*)
 {
-// TODO: init event things here
 }
 
 void EventAction::EndOfEventAction(const G4Event* event)
@@ -64,31 +76,71 @@ void EventAction::EndOfEventAction(const G4Event* event)
 		= GetHitsCollection(fAbsHCID, event);
 	
 	G4int nofHits = absoHC->entries();
-	//G4int eventID = event->GetEventID();
-		
+
 	for(int i=0; i<nofHits; i++){
+
 		LightDetectorHit* absoHit = (*absoHC)[i];
-		
+
 		auto analysisManager = G4AnalysisManager::Instance();
 	
-		
-		analysisManager->FillNtupleDColumn(0, absoHit->GetEdep());
-		
-		
-		analysisManager->FillNtupleIColumn(1, absoHit->GetPhysVolNum());
+		analysisManager->FillNtupleFColumn(0, absoHit->GetEnergy());
 	
-		analysisManager->FillNtupleFColumn(2, event->GetPrimaryVertex(0)->GetPosition().getX());
-		analysisManager->FillNtupleFColumn(3, event->GetPrimaryVertex(0)->GetPosition().getY());
-		analysisManager->FillNtupleFColumn(4, event->GetPrimaryVertex(0)->GetPosition().getZ());
+		analysisManager->FillNtupleDColumn(1, absoHit->GetEdep());
+	
+		analysisManager->FillNtupleIColumn(2, absoHit->GetPhysVolNum());
 
-		analysisManager->FillNtupleFColumn(5, absoHit->GetxfPos());
-		analysisManager->FillNtupleFColumn(6, absoHit->GetyfPos());
-		analysisManager->FillNtupleFColumn(7, absoHit->GetzfPos());
-		
-		
-		analysisManager->FillNtupleIColumn(8, event->GetPrimaryVertex(0)->GetPrimary()->GetPDGcode());
+		analysisManager->FillNtupleFColumn(3, absoHit->GetxiPos());
+		analysisManager->FillNtupleFColumn(4, absoHit->GetyiPos());
+		analysisManager->FillNtupleFColumn(5, absoHit->GetziPos());
+
+		analysisManager->FillNtupleFColumn(6, absoHit->GetxfPos());
+		analysisManager->FillNtupleFColumn(7, absoHit->GetyfPos());
+		analysisManager->FillNtupleFColumn(8, absoHit->GetzfPos());	
+
+		analysisManager->FillNtupleFColumn(9, event->GetPrimaryVertex(0)->GetPosition().getX());
+		analysisManager->FillNtupleFColumn(10, event->GetPrimaryVertex(0)->GetPosition().getY());
+		analysisManager->FillNtupleFColumn(11, event->GetPrimaryVertex(0)->GetPosition().getZ());
 	
+		analysisManager->FillNtupleIColumn(12, ParticleID(absoHit->GetPDef()));
+
+		analysisManager->FillNtupleFColumn(13, absoHit->GetxiMom());
+		analysisManager->FillNtupleFColumn(14, absoHit->GetyiMom());
+		analysisManager->FillNtupleFColumn(15, absoHit->GetziMom());
+
+		analysisManager->FillNtupleFColumn(16, absoHit->GetxfMom());
+		analysisManager->FillNtupleFColumn(17, absoHit->GetyfMom());
+		analysisManager->FillNtupleFColumn(18, absoHit->GetzfMom());
+
+		analysisManager->FillNtupleIColumn(19, absoHit->GetEventID());
+		analysisManager->FillNtupleIColumn(20, absoHit->GetTrackID());
+		analysisManager->FillNtupleIColumn(21, absoHit->GetParentID());
 		
 		analysisManager->AddNtupleRow();
 	}
 }
+
+
+
+
+
+static int ParticleID(const G4ParticleDefinition* pd){
+
+
+	if(pd == G4Electron::Definition()){
+		return -11;
+	} else if(pd == G4Positron::Definition()){
+		return 11;
+	} else if(pd == G4MuonMinus::Definition()){
+		return -13;
+	} else if(pd == G4MuonPlus::Definition()){
+		return 13;
+	} else if(pd ==G4Gamma::Definition()){
+		return 22;
+	} else if(pd ==G4OpticalPhoton::Definition()){
+		return -22;
+	} 
+
+	return 0;		 
+	
+}
+
