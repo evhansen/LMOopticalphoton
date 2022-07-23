@@ -22,6 +22,7 @@
 #include "G4Tubs.hh"
 #include "G4SubtractionSolid.hh"
 
+#include "G4UserLimits.hh"
 #include "G4VVisManager.hh"
 #include "G4Polyline.hh"
 

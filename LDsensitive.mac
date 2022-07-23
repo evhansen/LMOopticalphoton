@@ -1,30 +1,16 @@
 # Macro file for example B4
 
-#/process/optical/cerenkov/setStackPhotons false
-#/process/optical/cerenkov/setMaxPhotons 50
-#/process/optical/cerenkov/setTrackSecondariesFirst true
-#/process/optical/scintillation/setStackPhotons false
-#/process/optical/scintillation/setTrackSecondariesFirst true
+/process/optical/scintillation/setByParticleType false
 
-#/process/optical/processActivation absorption false
-#/process/optical/processActivation wls false
-#/process/optical/processActivation wls2 false
-#/process/optical/processActivation boundary false
-#/process/optical/processActivation rayleigh false
-#/process/optical/processActivation mie false
-/process/optical/processActivation Cerenkov 0
-/process/optical/processActivation Scintillation 1
-/process/optical/scintillation/setByParticleType true
-#/process/inactivate Cerenkov
-
-
-#/control/verbose 2
-#/tracking/verbose 2
-#/run/verbose 2
+/control/verbose 2
+/tracking/verbose 2
+/run/verbose 2
 #/process/optical/verbose 4
 #/geometry/navigator/verbose 4
+#/process/optical/scintillation/verbose 2
+#/process/optical/cerenkov/verbose 2
+
 #/control/cout/ignoreThreadsExcept 0
-#/process/optical/... /verbose 2
 
 /run/initialize
 
@@ -39,4 +25,4 @@
 
 /random/setSeeds 1 10
 /run/printProgress 100000
-/run/beamOn 100000
+/run/beamOn 10000

@@ -160,6 +160,7 @@ G4bool LightDetectorSD::ProcessHits(G4Step* step,
 	}
 
 
+
   return true;
 }
 

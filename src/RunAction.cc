@@ -15,7 +15,9 @@ RunAction::RunAction()
 	G4cout << "Using " << analysisManager->GetType() << G4endl;
 	
 	analysisManager->SetVerboseLevel(1);
-	analysisManager->SetNtupleMerging(true);
+	
+	// G4Exception: merging ntuples not applicable in sequential application
+	//analysisManager->SetNtupleMerging(true);
 
 	//https://geant4.web.cern.ch/sites/default/files/geant4/collaboration/working_groups/electromagnetic/gallery/units/SystemOfUnits.html
 

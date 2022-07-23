@@ -24,6 +24,11 @@ G4VPhysicalVolume* DetectorConstruction::DefineCrys(G4double LMOHalfSizes[]){
 	Mpnt,    // its material
 	"LMO_primary");          // its name
 
+	G4UserLimits* lim = new G4UserLimits();
+	lim->SetMaxAllowedStep(0.5*mm);
+	fLMO_LV_primary->SetUserLimits(lim);
+
+
 	if(lmos == 'e' || lmos == 's'){ // LMO exists 
 		G4VisAttributes* LMOVA = new G4VisAttributes();
 		LMOVA->SetColor(1.0,1.0,0.0,0.3);

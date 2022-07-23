@@ -41,10 +41,9 @@ PrimaryGeneratorAction::PrimaryGeneratorAction(DetectorConstruction* det)
 	fParticleSource->SetParticleDefinition(G4Electron::Definition());
 	
 	fParticleSource->SetParticleTime(0.0 * ns);
-	fParticleSource->SetParticlePosition(G4ThreeVector(0.0*cm,0.0*cm,0.0*cm));
+
+	fParticleSource->SetParticlePosition(G4ThreeVector(0.0*cm,0.0*cm,0.0*cm));	
 	fParticleSource->SetParticleMomentumDirection(G4ThreeVector(0., 0., 0.));
-
-
 
 }
 
@@ -58,6 +57,30 @@ PrimaryGeneratorAction::~PrimaryGeneratorAction()
 void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
 
+	if(misc == 'b'){
+
+		fParticleSource->SetParticleEnergy(0.31*MeV);
+		fParticleSource->SetParticleDefinition(G4Electron::Definition());
+	} else if (misc == '1') {
+
+		fParticleSource->SetParticleEnergy(1.17*MeV);
+		fParticleSource->SetParticleDefinition(G4Gamma::Definition());
+	} else if (misc == '2') {
+
+		fParticleSource->SetParticleEnergy(1.33*MeV);
+		fParticleSource->SetParticleDefinition(G4Gamma::Definition());
+	} else { // muons
+
+		fParticleSource->SetParticleEnergy(5.*GeV);
+		fParticleSource->SetParticleDefinition(G4Gamma::Definition());
+	}
+
+	fParticleSource->SetParticlePosition(G4ThreeVector(0.0*mm,0.0*mm,-65.0*mm));
+	fParticleSource->SetParticleMomentumDirection(G4ThreeVector(0.1, 0.1, 0.8));
+
+	fParticleSource->GeneratePrimaryVertex(anEvent);
+
+/*
 	// TODO: fix this .. damn units	
 	G4double LMOHS = fDetector->GetLMOXSize(); // LMOHalfSizes[0], in metres ..
 	
@@ -72,6 +95,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 	} else {
 		RectanglePlateSource(1,1,SquarePSHalfSizes,SquarePSPos,CosmogenicMuons,anEvent);
 	}
+*/
 
 	if(fParticleSource->GetParticleDefinition() ==
 		//G4OpticalPhoton::OpticalPhotonDefinition() ||

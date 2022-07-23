@@ -63,7 +63,6 @@ void DetectorConstruction::DefineCrysM(char mat){
 
 	G4MaterialPropertiesTable* fLMOMPT = new G4MaterialPropertiesTable();	
 
-
 	if(mat == 't'){
 
 		G4Element* elTe = G4NistManager::Instance()
@@ -140,12 +139,39 @@ void DetectorConstruction::DefineCrysM(char mat){
 
 		fLMOMPT->AddProperty("RINDEX", energies, rindex, numentries);
 		fLMOMPT->AddProperty("REALRINDEX", energies, rindex, numentries);
-		
+
 		std::vector<G4double> en = {1.*eV,100.*GeV };
 		std::vector<G4double> eyield = {250.,250.};// 0.65keV/MeV ~2.6
 		std::vector<G4double> ayield = {38.,38.};// 0.1keV/Mev ~2.6
 
-		fLMOMPT->AddConstProperty("SCINTILLATIONYIELD",100000./MeV); // gammas
+
+		std::vector<G4double> ener = {2.6*eV};//3.*eV};,100.*MeV,10000.*GeV};
+		std::vector<G4double> scin = {100000.};//,100000.,100000.,100000.};//,100000.};
+
+		fLMOMPT->AddProperty("SCINTILLATIONCOMPONENT1",ener,scin);
+		//fLMOMPT->AddProperty("SCINTILLATIONCOMPONENT2",ener,scin);
+
+		fLMOMPT->AddConstProperty("SCINTILLATIONYIELD",100000./MeV);
+		
+
+		/*
+		char sy = readExtFile("./options/misc");
+
+
+		if(sy=='b'){ // beta
+
+			fLMOMPT->AddConstProperty
+				("SCINTILLATIONYIELD",250./MeV); // ????
+		} else { // gamma, muons
+
+			fLMOMPT->AddConstProperty
+				("SCINTILLATIONYIELD",100000./MeV);
+		}
+		*/
+
+
+		fLMOMPT->AddConstProperty("RESOLUTIONSCALE",1.0);
+		fLMOMPT->AddConstProperty("SCINTILLATIONTIMECONSTANT1",0.*ns);
 
 		//fLMOMPT->AddProperty("ALPHASCINTILLATIONYIELD",en,ayield); 
 		//fLMOMPT->AddProperty("ELECTRONSCINTILLATIONYIELD",en,eyield);
@@ -153,7 +179,6 @@ void DetectorConstruction::DefineCrysM(char mat){
 
 	fLMOMPT->AddProperty("ABSLENGTH", energies, abslength, numentries);
 	LMOMaterial->SetMaterialPropertiesTable(fLMOMPT);
-
 
 	if (! LMOMaterial) {
 		G4ExceptionDescription msg;
