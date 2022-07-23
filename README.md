@@ -83,4 +83,4 @@ note, for troubleshooting:
 
 note, iMom is always primary's (seconds get 0,0,0)
 
-TODO: fix scintillation
+TODO: fix scintillation, cerenkov

@@ -1,29 +1,3 @@
-//
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
-//
-//
 /// \file example.cc
 /// \brief Main program of the  example
 
@@ -33,16 +7,14 @@
 
 #include "G4PhysListFactory.hh"
 
-#include "G4DecayPhysics.hh"
-#include "G4EmExtraPhysics.hh"
-#include "G4IonPhysics.hh"
-#include "G4StoppingPhysics.hh"
-#include "G4HadronElasticPhysics.hh"
-#include "G4NeutronTrackingCut.hh"
-#include "G4HadronPhysicsFTFP_BERT.hh"
-
+//#include "G4OpticalProcessIndex.hh"
 #include "G4OpticalPhysics.hh"
+
+#include "G4StepLimiterPhysics.hh"
+#include "G4EmStandardPhysics_option2.hh"
 #include "G4EmStandardPhysics_option4.hh"
+//#include "G4EmStandardPhysicsSS.hh"
+#include "G4MuonicAtomDecayPhysics.hh"
 
 #include "G4RunManagerFactory.hh"
 
@@ -50,6 +22,7 @@
 #include "G4UIcommand.hh"
 
 #include "FTFP_BERT.hh"
+//#include "QGSP_BERT.hh"
 
 #include "G4String.hh"
 #include "G4Types.hh"
@@ -58,8 +31,6 @@
 
 #include "G4VisExecutive.hh"
 #include "G4UIExecutive.hh"
-
-#include "G4StepLimiterPhysics.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -121,21 +92,50 @@ int main(int argc,char** argv)
 #endif
 
 
-  // TODO: fix physics registration after particles are dandy ..................
-
   G4VModularPhysicsList* physicsList = new FTFP_BERT;
-	 
-  physicsList->RegisterPhysics(new G4OpticalPhysics());
-  physicsList->RegisterPhysics(new G4EmStandardPhysics_option4());
-  physicsList->RegisterPhysics(new G4EmExtraPhysics());
-  physicsList->RegisterPhysics(new G4DecayPhysics());
-  physicsList->RegisterPhysics(new G4HadronElasticPhysics());
-  physicsList->RegisterPhysics(new G4HadronPhysicsFTFP_BERT());
-  physicsList->RegisterPhysics(new G4StoppingPhysics());
-  physicsList->RegisterPhysics(new G4IonPhysics());
-  physicsList->RegisterPhysics(new G4NeutronTrackingCut());
-  physicsList->RegisterPhysics(new G4StepLimiterPhysics());
-  
+
+
+  G4OpticalPhysics* oP = new G4OpticalPhysics();	 
+  oP->Configure(kScintillation,true);
+  oP->Configure(kCerenkov,false);
+
+
+  auto oPa = G4OpticalParameters::Instance();
+
+
+  oPa->SetWLSTimeProfile("delta");
+
+  // new options broke scintillation?
+  oPa->SetScintYieldFactor(1.0);
+  oPa->SetScintExcitationRatio(0.0); // 1.0?
+  oPa->SetScintTrackSecondariesFirst(true);
+  //oPa->SetScintTrackInfo(true);
+  //oPa->SetScintStackPhotons(true);
+
+  //oPa->SetScintFiniteRiseTime(false);
+  oPa->SetScintEnhancedTimeConstants(false);
+  //oPa->SetScintByParticleType(false);
+
+ 
+  oPa->SetCerenkovMaxPhotonsPerStep(100);
+  oPa->SetCerenkovMaxBetaChange(10.0);
+  oPa->SetCerenkovTrackSecondariesFirst(true);
+  //oPa->SetCerenkovStackPhotons(true);
+
+
+  physicsList->RegisterPhysics(oP);
+
+
+  //physicsList->RegisterPhysics(new G4RadioactiveDecayPhysics());  
+  //physicsList->RegisterPhysics(new G4MuonicAtomDecayPhysics());  
+  physicsList->ReplacePhysics(new G4EmStandardPhysics_option4());
+
+
+  G4StepLimiterPhysics* sL = new G4StepLimiterPhysics();
+  sL->SetApplyToAll(true);
+  physicsList->RegisterPhysics(sL);
+
+
   runManager->SetUserInitialization(physicsList);
 
   
@@ -157,14 +157,13 @@ int main(int argc,char** argv)
   // Process macro or start UI session
   
   if ( macro.size() ) { // batch mode
-    G4String command = "/control/execute ";
-    UImanager->ApplyCommand(command+macro);
+    UImanager->ApplyCommand("/control/execute "+macro);
   
   } else  { // interactive mode : define UI session
     
     UImanager->ApplyCommand("/control/execute init_vis.mac");
     
-    UImanager->ApplyCommand("/control/execute LDsensitive.mac"); // yes, I am lazy
+    //UImanager->ApplyCommand("/control/execute LDsensitive.mac"); // yes, I am lazy
 
     ui->SessionStart();
 
