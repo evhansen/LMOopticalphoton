@@ -24,7 +24,6 @@ private:
                             // ,G4double gapEdep, G4double gapTrackLength
                           ) const;
 
-  // data members
   G4int  fAbsHCID;
   // G4int  fGapHCID;
 };

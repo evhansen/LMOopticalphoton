@@ -1,28 +1,25 @@
 
 static char readExtFile(const char* filename);
 
-// YES, YES to be messed with laterrrrrrr 
 
 G4VPhysicalVolume* DetectorConstruction::DefineCrys(G4double LMOHalfSizes[]){
-	auto LMO_box
-	= new G4Box("LMO",          // its name
-	LMOHalfSizes[0],LMOHalfSizes[1],LMOHalfSizes[2]);    //its size
+
+	auto LMO_box = new G4Box("LMO",
+		LMOHalfSizes[0],LMOHalfSizes[1],LMOHalfSizes[2]);    
 
 	G4Material*Mpnt;
 	
 	char lmos = readExtFile("./options/lmos");
 
-	if(lmos == 'e' || lmos == 's'){ // LMO exists 
+	if(lmos == 'e' || lmos == 's'){ // LMO exists
 		Mpnt = LMOMaterial;
 	} else { // LMO doesn't exist
 		Mpnt = WorldMaterial;
 	}
 	
 	G4LogicalVolume* fLMO_LV_primary
-	= new G4LogicalVolume(
-	LMO_box,         // its solid
-	Mpnt,    // its material
-	"LMO_primary");          // its name
+		= new G4LogicalVolume(LMO_box,Mpnt,"LMO_primary"); 
+
 
 	G4UserLimits* lim = new G4UserLimits();
 	lim->SetMaxAllowedStep(0.5*mm);
@@ -36,16 +33,9 @@ G4VPhysicalVolume* DetectorConstruction::DefineCrys(G4double LMOHalfSizes[]){
 		fLMO_LV_primary->SetVisAttributes(LMOVA);
 	}
 
-	G4VPhysicalVolume* fLMO1 = new G4PVPlacement(
-	0,                // no rotation
-	G4ThreeVector(0,0,0),  // place off center eventually
-	fLMO_LV_primary,          // its logical volume
-	"LMO1",          // its name
-	worldLV,                // its mother  volume
-	false,            // no boolean operation
-	1,                // copy number
-	fCheckOverlaps);  // checking overlaps
-	
+	G4VPhysicalVolume* fLMO1 = new G4PVPlacement(0,G4ThreeVector(0,0,0),
+		fLMO_LV_primary,"LMO1",worldLV,false,1,fCheckOverlaps);	
+
 	return fLMO1;
 }
 
@@ -77,11 +67,8 @@ G4VPhysicalVolume** IV1,G4VPhysicalVolume** IV2,G4VPhysicalVolume** IV3,G4VPhysi
 		
 
 
-	G4LogicalVolume* LDIVLV
-	= new G4LogicalVolume(
-	XInterimVacuum,     // its solid
-	WorldMaterial,  // its material
-	"XInterimVacuumLV");   // its name
+	G4LogicalVolume* LDIVLV = new G4LogicalVolume(XInterimVacuum,  
+		WorldMaterial,"XInterimVacuumLV"); 
 
 	G4VisAttributes* IVVA = new G4VisAttributes();
 	IVVA->SetColor(1.0,0.0,1.0,0.15);
@@ -94,193 +81,93 @@ G4VPhysicalVolume** IV1,G4VPhysicalVolume** IV2,G4VPhysicalVolume** IV3,G4VPhysi
 		IVHalfSizes[0],IVHalfSizes[1], (IVHalfSizes[3]>0) ? IVHalfSizes[3] : 1*mm );
 
 	
-	G4LogicalVolume* EMIVLV
-	= new G4LogicalVolume(
-	EMInterimVacuum,     // its solid
-	WorldMaterial,  // its material
-	"EMInterimVacuumLV");   // its name
+	G4LogicalVolume* EMIVLV = new G4LogicalVolume(EMInterimVacuum,
+		WorldMaterial,"EMInterimVacuumLV");
 
 	EMIVLV->SetVisAttributes(IVVA);
 
-	// I know that this is ugly .... will change after it functions as intended
+	// I know that this is ugly .... will change eventually 
 	
 	if (face1 == 'e'){
 			
 		if(IVHalfSizes[3] > 0){
-			*IV1 = new G4PVPlacement(
-			0,                // no rotation
-			G4ThreeVector(IVPos[0],
-				IVPos[1],IVPos[2]),
-			EMIVLV,          // its logical volume
-			"IV1T",    // its name
-			worldLV,          // its mother  volume
-			false,            // no boolean operation
-			30,                // copy number
-			fCheckOverlaps);  // checking overlaps
+			*IV1 = new G4PVPlacement(0,G4ThreeVector(IVPos[0],IVPos[1],IVPos[2]),
+				EMIVLV,"IV1T",worldLV,false,30,fCheckOverlaps);
 		}
 	} else {
 		
 		if(IVHalfSizes[2] > 0){
-			*IV1 = new G4PVPlacement(
-			0,                // no rotation
-			G4ThreeVector(IVPos[0],
-				IVPos[1],IVPos[2]),
-			LDIVLV,          // its logical volume
-			"IV1T",    // its name
-			worldLV,          // its mother  volume
-			false,            // no boolean operation
-			30,                // copy number
-			fCheckOverlaps);  // checking overlaps					
+			*IV1 = new G4PVPlacement(0,G4ThreeVector(IVPos[0],IVPos[1],IVPos[2]),
+			LDIVLV,"IV1T",worldLV,false,30,fCheckOverlaps);
 		}	
 	}
 
 	if (face2 == 'e'){
-		
 		if(IVHalfSizes[3] > 0){
-			*IV2 = new G4PVPlacement(
-			0,                // no rotation 
-			G4ThreeVector(IVPos[3],
-				IVPos[4],IVPos[5]),
-			EMIVLV,          // its logical volume
-			"IV1B",    // its name
-			worldLV,          // its mother  volume
-			false,            // no boolean operation
-			31,                // copy number
-			fCheckOverlaps);  // checking overlaps
+			*IV2 = new G4PVPlacement(0,G4ThreeVector(IVPos[3],IVPos[4],IVPos[5]),
+			EMIVLV,"IV1B",worldLV,false,31,fCheckOverlaps);
 		}
 	} else {
 		
 		if(IVHalfSizes[2] > 0){
-			*IV2 = new G4PVPlacement(
-			0,                // no rotation 
-			G4ThreeVector(IVPos[3],
-				IVPos[4],IVPos[5]),
-			LDIVLV,          // its logical volume
-			"IV1B",    // its name
-			worldLV,          // its mother  volume
-			false,            // no boolean operation
-			31,                // copy number
-			fCheckOverlaps);  // checking overlaps
+			*IV2 = new G4PVPlacement(0,G4ThreeVector(IVPos[3],IVPos[4],IVPos[5]),
+			LDIVLV,"IV1B",worldLV,false,31,fCheckOverlaps);
 		}
 	}
 
 	if (face3 == 'e'){
 		
 		if(IVHalfSizes[3] > 0){
-			*IV3 = new G4PVPlacement(
-			t1,                // 
-			G4ThreeVector(IVPos[6],
-				IVPos[7],IVPos[8]),
-			EMIVLV,          // its logical volume
-			"IV2B",    // its name
-			worldLV,          // its mother  volume
-			false,            // no boolean operation
-			32,                // copy number
-			fCheckOverlaps);  // checking overlaps
+			*IV3 = new G4PVPlacement(t1,G4ThreeVector(IVPos[6],IVPos[7],IVPos[8]),
+			EMIVLV,"IV2B",worldLV,false,32,fCheckOverlaps);
 		}
 	} else {
 		
 		if(IVHalfSizes[2] > 0){
-			*IV3 = new G4PVPlacement(
-			t1,                // 
-			G4ThreeVector(IVPos[6],
-				IVPos[7],IVPos[8]),
-			LDIVLV,          // its logical volume
-			"IV2B",    // its name
-			worldLV,          // its mother  volume
-			false,            // no boolean operation
-			32,                // copy number
-			fCheckOverlaps);  // checking overlaps
+			*IV3 = new G4PVPlacement(t1,G4ThreeVector(IVPos[6],IVPos[7],IVPos[8]),
+			LDIVLV,"IV2B",worldLV,false,32,fCheckOverlaps);
 		}
 	}
 
 	if (face4 == 'e'){
 		
 		if(IVHalfSizes[3] > 0){
-			*IV4 = new G4PVPlacement(
-			t1,                // 
-			G4ThreeVector(IVPos[9],
-				IVPos[10],IVPos[11]),
-			EMIVLV,          // its logical volume
-			"IV3T",    // its name
-			worldLV,          // its mother  volume
-			false,            // no boolean operation
-			33,                // copy number
-			fCheckOverlaps);  // checking overlaps
+
+			*IV4 = new G4PVPlacement(t1,G4ThreeVector(IVPos[9],IVPos[10],IVPos[11]),
+			EMIVLV,"IV3T",worldLV,false,33,fCheckOverlaps);
 		}
 	} else {
 		
 		if(IVHalfSizes[2] > 0){
-			*IV4 = new G4PVPlacement(
-			t1,                // 
-			G4ThreeVector(IVPos[9],
-				IVPos[10],IVPos[11]),
-			LDIVLV,          // its logical volume
-			"IV3T",    // its name
-			worldLV,          // its mother  volume
-			false,            // no boolean operation
-			33,                // copy number
-			fCheckOverlaps);  // checking overlaps
+			*IV4 = new G4PVPlacement(t1,G4ThreeVector(IVPos[9],IVPos[10],IVPos[11]),
+			LDIVLV,"IV3T",worldLV,false,33,fCheckOverlaps);
 		}
 	}
 
 	if (face5 == 'e'){
-		
 		if(IVHalfSizes[3] > 0){
-			*IV5 = new G4PVPlacement(
-			p1,                // 
-			G4ThreeVector(IVPos[12],
-				IVPos[13],IVPos[14]),
-			EMIVLV,          // its logical volume
-			"IV3B",    // its name
-			worldLV,          // its mother  volume
-			false,            // no boolean operation
-			34,                // copy number
-			fCheckOverlaps);  // checking overlaps
+			*IV5 = new G4PVPlacement(p1,G4ThreeVector(IVPos[12],IVPos[13],IVPos[14]),
+				EMIVLV,"IV3B",worldLV,false,34,fCheckOverlaps);
 		}
 	} else {
 		
 		if(IVHalfSizes[2] > 0){
-			*IV5 = new G4PVPlacement(
-			p1,                // 
-			G4ThreeVector(IVPos[12],
-				IVPos[13],IVPos[14]),
-			LDIVLV,          // its logical volume
-			"IV3B",    // its name
-			worldLV,          // its mother  volume
-			false,            // no boolean operation
-			34,                // copy number
-			fCheckOverlaps);  // checking overlaps
+			*IV5 = new G4PVPlacement(p1,G4ThreeVector(IVPos[12],IVPos[13],IVPos[14]),
+			LDIVLV,"IV3B",worldLV,false,34,fCheckOverlaps);
 		}
 	}
 
 	if (face6 == 'e'){
 		
 		if(IVHalfSizes[3] > 0){
-			*IV6 = new G4PVPlacement(
-			p1,                // 
-			G4ThreeVector(IVPos[15],
-				IVPos[16],IVPos[17]),
-			EMIVLV,          // its logical volume
-			"IV3T",    // its name
-			worldLV,          // its mother  volume
-			false,            // no boolean operation
-			35,                // copy number
-			fCheckOverlaps);  // checking overlaps
+			*IV6 = new G4PVPlacement(p1,G4ThreeVector(IVPos[15],IVPos[16],IVPos[17]),
+				EMIVLV,"IV3T",worldLV,false,35,fCheckOverlaps);
 		}
 	} else {
 		
 		if(IVHalfSizes[2] > 0){
-			*IV6 = new G4PVPlacement(
-			p1,                // 
-			G4ThreeVector(IVPos[15],
-				IVPos[16],IVPos[17]),
-			LDIVLV,          // its logical volume
-			"IV3T",    // its name
-			worldLV,          // its mother  volume
-			false,            // no boolean operation
-			35,                // copy number
-			fCheckOverlaps);  // checking overlaps
+			*IV6 = new G4PVPlacement(p1,G4ThreeVector(IVPos[15],IVPos[16],IVPos[17]),
+				LDIVLV,"IV3T",worldLV,false,35,fCheckOverlaps);
 		}	
 	}
 }
@@ -306,14 +193,11 @@ G4VPhysicalVolume** LD1,G4VPhysicalVolume** LD2,G4VPhysicalVolume** LD3,G4VPhysi
 	p1->rotateZ(90.*deg);
 	
 	auto LightDetector
-	= new G4Box("LightDetector",     // its name
-	LDHalfSizes[0],LDHalfSizes[1],LDHalfSizes[2]); // its size
+	= new G4Box("LightDetector",
+	LDHalfSizes[0],LDHalfSizes[1],LDHalfSizes[2]);
 
 	G4LogicalVolume* LightDetectorLV
-	= new G4LogicalVolume(
-	LightDetector,     // its solid
-	LightDetectorMaterial,  // its material
-	"LDLV");   // its name
+		= new G4LogicalVolume(LightDetector,LightDetectorMaterial,"LDLV");
 
 	auto simpleBoxVisAtt= new G4VisAttributes(G4Colour(1.0,1.0,1.0));
 	simpleBoxVisAtt->SetVisibility(true);

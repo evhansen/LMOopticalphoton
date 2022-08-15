@@ -5,6 +5,11 @@ static int BOM = 0; // 0 if BOM needs to be removed, else do not remove.
 static char readExtFile(const char* filename);
 float* readCSV(const char* filename, char delimiter,int*cols,int*rows);
 
+void SetEnergyVaryingProperty(const char* filename, const char* property, const char delimiter, double energyunit, double propertyunit, G4MaterialPropertiesTable* MPT);
+
+void SetEnergyVaryingProperties(const char* filename, const char* property1, const char* property2, const char delimiter, double energyunit, double propertyunit1, double propertyunit2, G4MaterialPropertiesTable* MPT);
+
+
 
 //TODO: fix up these
 
@@ -12,10 +17,9 @@ void DetectorConstruction::DefineWorldM(char mat){
 	G4int numentries = 4;
 
 	G4double energies[4] = {1.0*eV, 3.0*eV, 4.0*eV,100*GeV};
-	G4double a,z,density, iz;
+	G4double a,z,density;
 	G4String name= "";
 	G4String symbol = "";
-	G4int natoms;
 
 
 	new G4Material("Vacuum", z=1., a=1.01*g/mole,density= universe_mean_density,
@@ -41,27 +45,23 @@ void DetectorConstruction::DefineWorldM(char mat){
 		G4Exception("B4DetectorConstruction::DefineVolumes()",
 				"MyCode0001", FatalException, msg);
 	}
+
+	G4cout << "PRINTING WORLD TABLE\n" << G4endl;
+	fWorldMPT->DumpTable();
 }
 
 
 
 
 void DetectorConstruction::DefineCrysM(char mat){
-	G4int numentries = 4;
-
-	G4double energies[4] = {1.0*eV, 3.0*eV, 4.0*eV,100*GeV};
-	G4double a,z,density, iz;
+	G4double a,density, iz;
 	G4String name= "";
 	G4String symbol = "";
 	G4int natoms;
 
-	int cols, rows, eit, nit, kit;
-	float *vals;
-
-	G4double abslength[4], rindex[4];
-
-
 	G4MaterialPropertiesTable* fLMOMPT = new G4MaterialPropertiesTable();	
+
+	G4cout << "\nCrystal material: " << mat << "\n" << G4endl;
 
 	if(mat == 't'){
 
@@ -80,38 +80,97 @@ void DetectorConstruction::DefineCrysM(char mat){
 		LMOMaterial = G4NistManager::Instance()
 			->FindOrBuildMaterial("TeO2");
 
+		BOM = 99;
 
-		abslength[0] = 5*mm; abslength[1] = 5*mm;
-		abslength[2] = 5*mm; abslength[3] = 80*cm;
-
+		SetEnergyVaryingProperty("./options/mpt/teo2-abs.csv", "ABSLENGTH", ',', 
+				eV, cm, fLMOMPT);
+	
 		if(readExtFile("./options/teo2rndx") == 'o'){
-
-			vals = readCSV("./options/teo2-norindex.csv",',',&cols,&rows);
-
+			SetEnergyVaryingProperty("./options/mpt/teo2-norindex.csv", "RINDEX", ',', 
+				eV, 1, fLMOMPT);
 		} else {
-			vals = readCSV("./options/teo2-nerindex.csv",',',&cols,&rows);
+			SetEnergyVaryingProperty("./options/mpt/teo2-nerindex.csv", "RINDEX", ',', 
+				eV, 1, fLMOMPT);
 		}	
+	
+		BOM = 0;
 
-		eit = 0; G4double cuben[rows] = {0};
-		nit = 0; G4double cubrn[rows] = {0};
-		//kit = 0; G4double cubkn[rows] = {0};
+	} else if (mat == 'c') {
 
-		for(int i = 0; i < rows*(cols+1); i++){
+		G4Element* elCd = G4NistManager::Instance()
+			->FindOrBuildElement(48, false);
+		G4Element* elW = G4NistManager::Instance()
+			->FindOrBuildElement(74, false);
+		G4Element* elO = G4NistManager::Instance()
+			->FindOrBuildElement(8, false);
 
-			if(i % 2 == 0){// col 0
-				cuben[eit] = *(vals+i) * eV; 
-				eit++;
-			}
+		// tetragonal	
+		G4Material* CdWO4 = new G4Material 
+			(name="CdWO4", density=7.9*g/cm3, 6);
 
-			if((i+1) % 2 == 0){ // col 1
-				cubrn[nit] = *(vals+i);
-				nit++;
-			}
-		}
+		CdWO4->AddElement(elCd, natoms=1);
+		CdWO4->AddElement(elW, natoms=1);
+		CdWO4->AddElement(elO, natoms=4);
 
+		LMOMaterial = G4NistManager::Instance()
+			->FindOrBuildMaterial("CdWO4");
 
-		fLMOMPT->AddProperty("RINDEX", 
-				cuben, cubrn, rows);
+		BOM = 99;
+		SetEnergyVaryingProperty("./options/mpt/cdwo4-rindex.csv", "RINDEX", ',', 
+				eV, 1, fLMOMPT);
+		SetEnergyVaryingProperty("./options/mpt/cdwo4-abs.csv", "ABSLENGTH", ',', 
+				eV, cm, fLMOMPT);
+		BOM = 0;	
+
+		std::vector<G4double> ener = {2.6*eV};//3.*eV};,100.*MeV,10000.*GeV};
+		std::vector<G4double> scin = {1200.};//,100000.,100000.,100000.};
+
+		fLMOMPT->AddProperty("SCINTILLATIONCOMPONENT1",ener,scin);
+		fLMOMPT->AddConstProperty("SCINTILLATIONTIMECONSTANT1",0.005*ns);
+
+		fLMOMPT->AddConstProperty("SCINTILLATIONYIELD",1200./keV);
+		
+		fLMOMPT->AddConstProperty("RESOLUTIONSCALE",1.0);
+		fLMOMPT->AddConstProperty("SCINTILLATIONTIMECONSTANT1",0.*ns);
+
+	} else if (mat == 'p') {
+
+		G4Element* elPb = G4NistManager::Instance()
+			->FindOrBuildElement(82, false);
+		G4Element* elW = G4NistManager::Instance()
+			->FindOrBuildElement(74, false);
+		G4Element* elO = G4NistManager::Instance()
+			->FindOrBuildElement(8, false);
+
+		// tetragonal	
+		G4Material* PbWO4 = new G4Material 
+			(name="PbWO4", density=8.28*g/cm3, 6);
+
+		PbWO4->AddElement(elPb, natoms=1);
+		PbWO4->AddElement(elW, natoms=1);
+		PbWO4->AddElement(elO, natoms=4);
+
+		LMOMaterial = G4NistManager::Instance()
+			->FindOrBuildMaterial("PbWO4");
+
+		BOM = 99;
+		SetEnergyVaryingProperty("./options/mpt/pbwo4-rindex.csv", "RINDEX", ',', 
+				eV, 1, fLMOMPT);
+		SetEnergyVaryingProperty("./options/mpt/pbwo4-abs.csv", "ABSLENGTH", ',', 
+				eV, mm, fLMOMPT);
+		BOM = 0;
+
+		std::vector<G4double> ener = {2.6*eV};//3.*eV};,100.*MeV,10000.*GeV};
+		std::vector<G4double> scin = {16000.};//,100000.,100000.,100000.};
+
+		fLMOMPT->AddProperty("SCINTILLATIONCOMPONENT1",ener,scin);
+		fLMOMPT->AddConstProperty("SCINTILLATIONTIMECONSTANT1",0.005*ns);
+
+		fLMOMPT->AddConstProperty("SCINTILLATIONYIELD",16000./MeV);
+		
+		fLMOMPT->AddConstProperty("RESOLUTIONSCALE",1.0);
+		fLMOMPT->AddConstProperty("SCINTILLATIONTIMECONSTANT1",0.*ns);
+
 	} else {
 
 		G4Element* elLi = new G4Element
@@ -132,52 +191,29 @@ void DetectorConstruction::DefineCrysM(char mat){
 		LMOMaterial = G4NistManager::Instance()
 			->FindOrBuildMaterial("Li2MoO4");
 
-		abslength[0] = 100*mm; abslength[1] = 100*mm;
-		abslength[2] = 100*mm; abslength[3] = 100*mm;
-		rindex[0] = 1.44;	rindex[1] = rindex[0];
-		rindex[2] = rindex[0];	rindex[3] = rindex[0];
-
-		fLMOMPT->AddProperty("RINDEX", energies, rindex, numentries);
-		fLMOMPT->AddProperty("REALRINDEX", energies, rindex, numentries);
-
-		std::vector<G4double> en = {1.*eV,100.*GeV };
-		std::vector<G4double> eyield = {250.,250.};// 0.65keV/MeV ~2.6
-		std::vector<G4double> ayield = {38.,38.};// 0.1keV/Mev ~2.6
-
+		BOM = 99;
+		SetEnergyVaryingProperty("./options/mpt/lmo-rindex.csv", "RINDEX", ',', 
+				eV, 1, fLMOMPT);
+		SetEnergyVaryingProperty("./options/mpt/lmo-abs.csv", "ABSLENGTH", ',', 
+				eV, mm, fLMOMPT);
+		BOM = 0;	
 
 		std::vector<G4double> ener = {2.6*eV};//3.*eV};,100.*MeV,10000.*GeV};
-		std::vector<G4double> scin = {100000.};//,100000.,100000.,100000.};//,100000.};
+		std::vector<G4double> scin = {1000.};//,100000.,100000.,100000.};
 
 		fLMOMPT->AddProperty("SCINTILLATIONCOMPONENT1",ener,scin);
-		//fLMOMPT->AddProperty("SCINTILLATIONCOMPONENT2",ener,scin);
+		fLMOMPT->AddConstProperty("SCINTILLATIONTIMECONSTANT1",0.005*ns);
 
-		fLMOMPT->AddConstProperty("SCINTILLATIONYIELD",100000./MeV);
+		fLMOMPT->AddConstProperty("SCINTILLATIONYIELD",1000./MeV);
 		
-
-		/*
-		char sy = readExtFile("./options/misc");
-
-
-		if(sy=='b'){ // beta
-
-			fLMOMPT->AddConstProperty
-				("SCINTILLATIONYIELD",250./MeV); // ????
-		} else { // gamma, muons
-
-			fLMOMPT->AddConstProperty
-				("SCINTILLATIONYIELD",100000./MeV);
-		}
-		*/
-
-
 		fLMOMPT->AddConstProperty("RESOLUTIONSCALE",1.0);
 		fLMOMPT->AddConstProperty("SCINTILLATIONTIMECONSTANT1",0.*ns);
 
 		//fLMOMPT->AddProperty("ALPHASCINTILLATIONYIELD",en,ayield); 
 		//fLMOMPT->AddProperty("ELECTRONSCINTILLATIONYIELD",en,eyield);
- 	}
+ 	
+	}
 
-	fLMOMPT->AddProperty("ABSLENGTH", energies, abslength, numentries);
 	LMOMaterial->SetMaterialPropertiesTable(fLMOMPT);
 
 	if (! LMOMaterial) {
@@ -187,50 +223,22 @@ void DetectorConstruction::DefineCrysM(char mat){
 				"MyCode0001", FatalException, msg);
 	}
 
+	G4cout << "PRINTING CRYSTAL TABLE\n" << G4endl;
+	fLMOMPT->DumpTable();
 }
 
 
 
 
 void DetectorConstruction::DefineLDM(char mat){
-	G4int numentries = 4;
-
-	G4double energies[4] = {2.0*eV, 3.0*eV, 4.0*eV,100*MeV};
-	G4double a,z,density, iz;
+	G4double a,z,density;
 	G4String name= "";
 	G4String symbol = "";
-	G4int natoms;
-
-	int cols, rows, eit, nit, kit;
-	float *vals;
-
-	G4double abslength[4];
-
-
 
 	G4MaterialPropertiesTable* fLDMPT = new G4MaterialPropertiesTable();
 
-	G4double trans[4] = {0.1,0.1,0.1,0.1};
-
-	// apparently ... for dielectric-dielectric surfaces,
-	// transmittance is for the proportion of g transmitted
-	// through the material and the reflectivity is derived by
-	// "R = 100% - T" (whatever that means). 
-
-	G4double refl[4] = {0.9,0.9,0.9,0.9}; 
-
-	// reflectivity specifies .. the absorption length since it ought be
-	// R = 1 - a, where a is the fraction of g absorbed .. 
-
-	// altogether, we have .1 transmitted, and .1 absorbed,
-	// so that .8 undergoes refraction, reflection, TIR, etc.
-
-	// for a dielectric_metal boundary,
-	// reflectivity sets the probability for which g are reflected 
-	// (exactly what we want so don't need to change)
-
-
-	G4double Rrindex[4], Irindex[4];
+	//G4double trans[4] = {0.1,0.1,0.1,0.1};
+	//G4double refl[4] = {0.9,0.9,0.9,0.9}; 
 
 	if(mat == 's'){
 		new G4Material(name="Silicon", 
@@ -239,118 +247,31 @@ void DetectorConstruction::DefineLDM(char mat){
 		LightDetectorMaterial = G4NistManager::Instance()
 			->FindOrBuildMaterial("Silicon");
 
-
-		vals = readCSV("./options/al-rindex.csv",',',&cols,&rows);
-
-		eit = 0; G4double lden[rows] = {0};
-		nit = 0; G4double ldrn[rows] = {0};
-		kit = 0; G4double ldkn[rows] = {0};
-
-		for(int i = 0; i < rows*(cols+1); i++){
-
-			if(i % 3 == 0){// col 0
-				lden[eit] = *(vals+i) * eV; 
-				eit++;
-			}
-
-			if((i+1) % 3 == 0){ // col 2
-				ldkn[kit] = *(vals+i);
-				kit++;
-			}
-
-			if((i+2) % 3 == 0){ // col 1
-				ldrn[nit] = *(vals+i);
-				nit++;
-			}
-		}
-
-		//Last is actually at 0.2066 micrometers
-		  Rrindex[0] = 3.906;	Rrindex[1] = 5.222;
-		  Rrindex[2] = 5.01; 	Rrindex[3] = 1.01;	
-		  Irindex[0] = 0.022; 	Irindex[1] = 0.269;
-		  Irindex[2] = 3.586; 	Irindex[3] = 2.909;
-
-		abslength[0] = pow(10,2)*pow(10,-6)*m;abslength[1] = abslength[0];
-		abslength[2] = abslength[0];abslength[3] = abslength[0];
-
-		// TODO: FIX THE FILE RINDEX, REEEEEEEEEEEEEEE
-
-		fLDMPT->AddProperty("RINDEX", 
-			energies, Rrindex, numentries);
-		fLDMPT->AddProperty("REALRINDEX", 
-			energies, Rrindex, numentries);
-		fLDMPT->AddProperty("IMAGINARYRINDEX", 	
-			energies, Irindex, numentries);
-		LDk->AddProperty("IMAGINARYRINDEX", 
-			energies,Irindex, numentries);
-		
-		/*
-		fLDMPT->AddProperty("RINDEX", 
-				lden, ldrn, rows);
-		fLDMPT->AddProperty("REALRINDEX", 
-				lden, ldrn, rows);
-		fLDMPT->AddProperty("IMAGINARYRINDEX", 
-				lden, ldkn, rows);
-		LDk->AddProperty("IMAGINARYRINDEX", 
-				lden, ldkn, rows);
-		*/
+		BOM = 0;
+		SetEnergyVaryingProperty("./options/mpt/si-rindex.csv", "RINDEX", ',', 
+				eV, 1, fLDMPT);
+		SetEnergyVaryingProperty("./options/mpt/si-abs.csv", "ABSLENGTH", ',', 
+				eV, cm, fLDMPT);
+		BOM = 0;	
 
 	} else {
-
 		new G4Material(name="Germanium", 
 				z=32.0, a=72.61*g/mole, density=5.323*g/cm3);
 
 		LightDetectorMaterial = G4NistManager::Instance()
 			->FindOrBuildMaterial("Germanium");
 
-
-		vals = readCSV("./options/ge-rindex.csv",',',&cols,&rows);
-
-		eit = 0; G4double lden[rows] = {0};
-		nit = 0; G4double ldrn[rows] = {0};
-		kit = 0; G4double ldkn[rows] = {0};
-
-		for(int i = 0; i < rows*(cols+1); i++){
-
-			if(i % 3 == 0){// col 0
-				lden[eit] =*(vals+i); 
-				eit++;
-			}
-
-			if((i+1) % 3 == 0){ // col 2
-				ldkn[kit] = *(vals+i);
-				kit++;
-			}
-
-			if((i+2) % 3 == 0){ // col 1
-				ldrn[nit] = *(vals+i);
-				nit++;
-			}
-		}
-
-
-		abslength[0] = 10*pow(10,-6)*m;abslength[1] = abslength[0];
-		abslength[2] = abslength[0];abslength[3] = abslength[0];
-
-		fLDMPT->AddProperty("RINDEX", 
-				lden, ldrn, rows);
-		fLDMPT->AddProperty("REALRINDEX", 
-				lden, ldrn, rows);
-		fLDMPT->AddProperty("IMAGINARYRINDEX", 
-				lden, ldkn, rows);
-		LDk->AddProperty("IMAGINARYRINDEX", 
-				lden, ldkn, rows);
-
-
+		BOM = 0;
+		SetEnergyVaryingProperty("./options/mpt/ge-rindex.csv", "RINDEX", ',', 
+				eV, 1, fLDMPT);
+	
+		SetEnergyVaryingProperty("./options/mpt/ge-abs.csv", "ABSLENGTH", ',', 
+				eV, cm, fLDMPT);
+		BOM = 0;	
 	}
 
-	fLDMPT->AddProperty("ABSLENGTH",
-			energies, abslength, numentries);	
-
-	//LDk->AddProperty("TRANSMITTANCE", 
-	//		energies, trans, numentries);
-	LDk->AddProperty("REFLECTIVITY", 
-			energies, refl, numentries);
+	//LDk->AddProperty("REFLECTIVITY", 
+	//		energies, refl, numentries);
 
 	LightDetectorMaterial->SetMaterialPropertiesTable(fLDMPT);
 
@@ -360,45 +281,20 @@ void DetectorConstruction::DefineLDM(char mat){
 		G4Exception("B4DetectorConstruction::DefineVolumes()",
 				"MyCode0001", FatalException, msg);
 	}
+
+	G4cout << "PRINTING LD TABLE\n" << G4endl;
+	fLDMPT->DumpTable();
 }
 
 
 
 
 void DetectorConstruction::DefineEMM(char mat){
-	G4int numentries = 4;
-
-	G4double energies[4] = {2.0*eV, 3.0*eV, 4.0*eV,100*MeV};
-	G4double a,z,density, iz;
 	G4String name= "";
 	G4String symbol = "";
-	G4int natoms;
 
-	int cols, rows, eit, nit, kit;
-	float *vals;
-
-	G4double trans[4] = {0.1,0.1,0.1,0.1};
-
-	// apparently ... for dielectric-dielectric surfaces,
-	// transmittance is for the proportion of g transmitted
-	// through the material and the reflectivity is derived by
-	// "R = 100% - T" (whatever that means). 
-
-	G4double refl[4] = {0.9,0.9,0.9,0.9}; 
-
-	// reflectivity specifies .. the absorption length since it ought be
-	// R = 1 - a, where a is the fraction of g absorbed .. 
-
-	// altogether, we have .1 transmitted, and .1 absorbed,
-	// so that .8 undergoes refraction, reflection, TIR, etc.
-
-	// for a dielectric_metal boundary,
-	// reflectivity sets the probability for which g are reflected 
-	// (exactly what we want so don't need to change)
-
-
-	G4double abslength[4];
-
+	//G4double trans[4] = {0.1,0.1,0.1,0.1};
+	//G4double refl[4] = {0.9,0.9,0.9,0.9}; 
 
 	G4MaterialPropertiesTable* EMMPT = new G4MaterialPropertiesTable();
 
@@ -407,138 +303,42 @@ void DetectorConstruction::DefineEMM(char mat){
 		EMMaterial = G4NistManager::Instance()
 			->FindOrBuildMaterial("G4_Cu");
 
-		vals = readCSV("./options/cu-rindex.csv",',',&cols,&rows);
-
-		eit = 0; G4double emen[rows] = {0};
-		nit = 0; G4double emrn[rows] = {0};
-		kit = 0; G4double emkn[rows] = {0};
-
-		for(int i = 0; i < rows*(cols+1); i++){
-
-			if(i % 3 == 0){// col 0
-				emen[eit] = *(vals+i) * eV; 
-				eit++;
-			}
-
-			if((i+1) % 3 == 0){ // col 2
-				emkn[kit] = *(vals+i);
-				kit++;
-			}
-
-			if((i+2) % 3 == 0){ // col 1
-				emrn[nit] = *(vals+i);
-				nit++;
-			}
-		}
-
-		abslength[0] = 10*pow(10,-6)*m;abslength[1] = abslength[0];
-		abslength[2] = abslength[0];abslength[3] = abslength[0];
-
-
-		EMMPT->AddProperty("REALRINDEX",emen,emrn,rows);
-		EMMPT->AddProperty("RINDEX",emen,emrn,rows);
-		EMMPT->AddProperty("IMAGINARYRINDEX",emen,emkn,rows);
-		EMMPT->AddProperty("ABSLENGTH",energies, abslength, numentries);
-		EMk->AddProperty("IMAGINARYRINDEX",emen,emkn,rows);
+		BOM = 0;
+		SetEnergyVaryingProperty("./options/mpt/cu-rindex.csv", "RINDEX", ',', 
+				eV, 1, EMMPT);
+		SetEnergyVaryingProperty("./options/mpt/cu-abs.csv", "ABSLENGTH", ',', 
+				eV, cm, EMMPT);
+		BOM = 0;	
 
 	} else if(mat == 'm') {
 
-		BOM = 99;
-		
 		EMMaterial = G4NistManager::Instance()
 			->FindOrBuildMaterial("G4_Al");
-	
-		vals = readCSV("./options/mysterious-rindex.csv",',',&cols,&rows);	
 
-		eit = 0; G4double emen[rows] = {0};
-		nit = 0; G4double emrn[rows] = {0};
-
-		for(int i = 0; i < rows*(cols+1); i++){
-
-			if(i % 2 == 0){// col 0
-				emen[eit] = *(vals+i) * eV; 
-				eit++;
-			}
-
-			if((i+1) % 2 == 0){ // col 1
-				emrn[nit] = *(vals+i);
-				nit++;
-			}
-		}
-
-		EMMPT->AddProperty("REALRINDEX",emen,emrn,rows);
-		EMMPT->AddProperty("RINDEX",emen,emrn,rows);
-
-		cols = 0; rows = 0;	
-
-		vals = readCSV("./options/mysterious-abs.csv",',',&cols,&rows);
-
-		eit = 0; G4double emabsen[rows] = {0};
-		nit = 0; G4double emabs[rows] = {0};
-
-		for(int i = 0; i < rows*(cols+1); i++){
-
-			if(i % 2 == 0){// col 0
-				emabsen[eit] = *(vals+i) * eV; 
-				eit++;
-			}
-
-			if((i+1) % 2 == 0){ // col 1
-				emabs[nit] = *(vals+i) * mm;
-				nit++;
-			}
-		}
-
-		EMMPT->AddProperty("ABSLENGTH",emabsen, emabs, rows);
-
-		BOM = 0; // reset to default 
+		BOM = 99;
+		SetEnergyVaryingProperty("./options/mpt/mysterious-rindex.csv", "RINDEX", ',', 
+				eV, 1, EMMPT);
+		SetEnergyVaryingProperty("./options/mpt/mysterious-abs.csv", "ABSLENGTH", ',', 
+				eV, cm, EMMPT);
+		BOM = 0; 
 
 	} else {
 
 		EMMaterial = G4NistManager::Instance()
 			->FindOrBuildMaterial("G4_Al");
 
-
-		vals = readCSV("./options/al-rindex.csv",',',&cols,&rows);
-		eit = 0; G4double emen[rows] = {0};
-		nit = 0; G4double emrn[rows] = {0};
-		kit = 0; G4double emkn[rows] = {0};
-
-		for(int i = 0; i < rows*(cols+1); i++){
-
-			if(i % 3 == 0){// col 0
-				emen[eit] = *(vals+i) * eV; 
-				eit++;
-			}
-
-			if((i+1) % 3 == 0){ // col 2
-				emkn[kit] = *(vals+i);
-				kit++;
-			}
-
-			if((i+2) % 3 == 0){ // col 1
-				emrn[nit] = *(vals+i);
-				nit++;
-			}
-		}
-
-		abslength[0] = pow(10,3)*pow(10,-6)*m;abslength[1] = abslength[0];
-		abslength[2] = abslength[0];abslength[3] = abslength[0];
-
-		EMMPT->AddProperty("REALRINDEX",emen,emrn,rows);
-		EMMPT->AddProperty("IMAGINARYRINDEX",emen,emkn,rows);
-		EMMPT->AddProperty("RINDEX",emen,emrn,rows);
-		EMMPT->AddProperty("ABSLENGTH",energies, abslength, numentries);
-		EMk->AddProperty("IMAGINARYRINDEX",emen,emkn,rows);
+		BOM = 0;
+		SetEnergyVaryingProperty("./options/mpt/al-rindex.csv", "RINDEX", ',', 
+				eV, 1, EMMPT);
+		SetEnergyVaryingProperty("./options/mpt/al-abs.csv", "ABSLENGTH", ',', 
+				eV, cm, EMMPT);
+		BOM = 0; 
 	}
 
-
 	//EMk->AddProperty("TRANSMITTANCE",energies,trans,numentries);
-	EMk->AddProperty("REFLECTIVITY",energies,refl,numentries);
-
+	//EMk->AddProperty("REFLECTIVITY",energies,refl,numentries);
 
 	EMMaterial->SetMaterialPropertiesTable(EMMPT);
-
 
 	if (!EMMaterial) {
 		G4ExceptionDescription msg;
@@ -546,29 +346,24 @@ void DetectorConstruction::DefineEMM(char mat){
 		G4Exception("B4DetectorConstruction::DefineVolumes()",
 				"MyCode0001", FatalException, msg);
 	}	
+
+	G4cout << "PRINTING EM TABLE\n" << G4endl;
+	EMMPT->DumpTable();
 }
 
 
 
 
 void DetectorConstruction::DefineARCM(char mat){
-	G4int numentries = 4;
-
-	G4double energies[4] = {2.0*eV, 3.0*eV, 4.0*eV,100*MeV};
-	G4double a,z,density, iz;
+	G4double density;
 	G4String name= "";
 	G4String symbol = "";
 	G4int natoms;
 
-	int cols, rows, eit, nit, kit;
-	float *vals;
-
-	G4double abslength[4];
-
-
 	G4MaterialPropertiesTable* ARCMPT= new G4MaterialPropertiesTable();	
 
 	if(true){
+
 		G4Element* elSi = G4NistManager::Instance()
 			->FindOrBuildElement(14, false);
 		G4Element* elO = G4NistManager::Instance()
@@ -580,44 +375,13 @@ void DetectorConstruction::DefineARCM(char mat){
 		SiO2->AddElement(elSi, natoms=1);
 		SiO2->AddElement(elO, natoms=2);
 
-		ARCMaterial = G4NistManager::Instance()
-			->FindOrBuildMaterial("SiO2");
+		BOM = 99;
+		SetEnergyVaryingProperty("./options/mpt/sio2-rindex.csv", "RINDEX", ',', 
+				eV, 1, ARCMPT);
+		SetEnergyVaryingProperty("./options/mpt/sio2-abs.csv", "ABSLENGTH", ',', 
+				eV, mm, ARCMPT);
+		BOM = 0;	
 
-		abslength[0] = 1/(383.94*cm);abslength[1]= abslength[0];
-		abslength[2] = abslength[0];abslength[3] = abslength[0];
-
-		vals = readCSV("./options/sio2-rindex.csv",',',&cols,&rows);
-
-		eit = 0; G4double arcen[rows] = {0};
-		nit = 0; G4double arcrn[rows] = {0};
-		kit = 0; G4double arckn[rows] = {0};
-
-		for(int i = 0; i < rows*(cols+1); i++){
-
-			if(i % 3 == 0){// col 0
-				arcen[eit] = *(vals+i) * eV; 
-				eit++;
-			}
-
-			if((i+1) % 3 == 0){ // col 2
-				arckn[kit] = *(vals+i);
-				kit++;
-			}
-
-			if((i+2) % 3 == 0){ // col 1
-				arcrn[nit] = *(vals+i);
-				nit++;
-			}
-		}
-
-		ARCMPT->AddProperty("RINDEX", 
-				arcen, arcrn, rows);
-		ARCMPT->AddProperty("REALRINDEX", 
-				arcen, arcrn, rows);
-		ARCMPT->AddProperty("IMAGINARYRINDEX", 
-				arcen, arckn, rows);
-		ARCk->AddProperty("IMAGINARYRINDEX", 
-				arcen, arckn, rows);
 	} else if(false){
 
 		G4Element* elSi = G4NistManager::Instance()
@@ -634,41 +398,13 @@ void DetectorConstruction::DefineARCM(char mat){
 		ARCMaterial = G4NistManager::Instance()
 			->FindOrBuildMaterial("SiO");
 
-		abslength[0] = 1/(0.004676*cm);abslength[1]= abslength[0];
-		abslength[2] = abslength[0];abslength[3] = abslength[0];
-
-		vals = readCSV("./options/sio-rindex.csv",',',&cols,&rows);
-
-		eit = 0; G4double arcen[rows] = {0};
-		nit = 0; G4double arcrn[rows] = {0};
-		kit = 0; G4double arckn[rows] = {0};
-
-		for(int i = 0; i < rows*(cols+1); i++){
-
-			if(i % 3 == 0){// col 0
-				arcen[eit] = *(vals+i) * eV; 
-				eit++;
-			}
-
-			if((i+1) % 3 == 0){ // col 2
-				arckn[kit] = *(vals+i);
-				kit++;
-			}
-
-			if((i+2) % 3 == 0){ // col 1
-				arcrn[nit] = *(vals+i);
-				nit++;
-			}
-		}
-
-		ARCMPT->AddProperty("RINDEX", 
-				arcen, arcrn, rows);
-		ARCMPT->AddProperty("REALRINDEX", 
-				arcen, arcrn, rows);
-		ARCMPT->AddProperty("IMAGINARYRINDEX", 
-				arcen, arckn, rows);
-		ARCk->AddProperty("IMAGINARYRINDEX", 
-				arcen, arckn, rows);
+		BOM = 99;
+		SetEnergyVaryingProperty("./options/mpt/sio-rindex.csv", "RINDEX", ',', 
+				eV, 1, ARCMPT);
+		SetEnergyVaryingProperty("./options/mpt/sio-abs.csv", "ABSLENGTH", ',', 
+				eV, mm, ARCMPT);
+		BOM = 0;	
+	
 	}else{
 
 		G4Element* elNb = G4NistManager::Instance()
@@ -685,46 +421,19 @@ void DetectorConstruction::DefineARCM(char mat){
 		ARCMaterial = G4NistManager::Instance()
 			->FindOrBuildMaterial("Nb2O5");
 
-
-		abslength[0] = 1/(4.676*cm);abslength[1]= abslength[0];
-		abslength[2] = abslength[0];abslength[3] = abslength[0];
-
-		vals = readCSV("./options/nb2o5-rindex.csv",',',&cols,&rows);
-
-		eit = 0; G4double arcen[rows] = {0};
-		nit = 0; G4double arcrn[rows] = {0};
-		kit = 0; G4double arckn[rows] = {0};
-
-		for(int i = 0; i < rows*(cols+1); i++){
-
-			if(i % 3 == 0){// col 0
-				arcen[eit] = *(vals+i) * eV; 
-				eit++;
-			}
-
-			if((i+1) % 3 == 0){ // col 2
-				arckn[kit] = *(vals+i);
-				kit++;
-			}
-
-			if((i+2) % 3 == 0){ // col 1
-				arcrn[nit] = *(vals+i);
-				nit++;
-			}
-		}
-
-		ARCMPT->AddProperty("RINDEX", 
-				arcen, arcrn, rows);
-		ARCMPT->AddProperty("REALRINDEX", 
-				arcen, arcrn, rows);
-		ARCMPT->AddProperty("IMAGINARYRINDEX", 
-				arcen, arckn, rows);
-		ARCk->AddProperty("IMAGINARYRINDEX", 
-				arcen, arckn, rows);
+		BOM = 99;
+		SetEnergyVaryingProperty("./options/mpt/nb2o5-rindex.csv", "RINDEX", ',', 
+				eV, 1, ARCMPT);
+		SetEnergyVaryingProperty("./options/mpt/nb2o5-abs.csv", "ABSLENGTH", ',', 
+				eV, mm, ARCMPT);
+		BOM = 0;
+		
 	}
 
-	ARCMPT->AddProperty("ABSLENGTH", energies, abslength, numentries);
 	ARCMaterial->SetMaterialPropertiesTable(ARCMPT);
+
+	G4cout << "PRINTING ARC TABLE\n" << G4endl;
+	ARCMPT->DumpTable();
 }
 
 
@@ -800,12 +509,86 @@ float* readCSV(const char* filename, char delimiter,int*cols,int*rows){
 	} while(fgets(out_s,200,p));
 	fclose(p);
 
-	/*G4cout << filename << G4endl;
+	G4cout << filename << G4endl;
 	for(int i = 0; i < ((*cols)+1)*(*rows); i++){
 	   G4cout << "Vals " << i << ": " << *(arrpnts+i) << G4endl;
 	 }
 	G4cout << "\n\n\n" << G4endl;
-	*/
+	
 
 	return arrpnts;
+}
+
+
+
+
+void SetEnergyVaryingProperty(const char* filename, const char* property, const char delimiter, double energyunit, double propertyunit, G4MaterialPropertiesTable* MPT){
+	
+	int cols, rows, eit, nit;
+	float *vals;
+	
+	vals = readCSV(filename, delimiter, &cols, &rows);
+
+	eit = 0; G4double emen[rows] = {0};
+	nit = 0; G4double emrn[rows] = {0};
+
+	for(int i = 0; i < rows*(cols+1); i++){
+
+
+		//G4cout << "PROPERTY DATA: " << *(vals+i) << G4endl;
+
+		if(i % 2 == 0){// col 0
+			emen[eit] = *(vals+i) * energyunit; 
+			eit++;
+		}
+
+		if((i+1) % 2 == 0){ // col 1
+			emrn[nit] = *(vals+i) * propertyunit;
+			nit++;
+		}
+	}
+
+
+	MPT->AddProperty(property,emen,emrn,rows);
+}
+
+
+
+
+
+void SetEnergyVaryingProperties(const char* filename, const char* property1, const char* property2, const char delimiter, double energyunit, double propertyunit1, double propertyunit2, G4MaterialPropertiesTable* MPT){
+	
+	int cols, rows, eit, nit, kit;
+	float *vals;
+	
+	vals = readCSV(filename, delimiter, &cols, &rows);
+
+	eit = 0; G4double emen[rows] = {0};
+	nit = 0; G4double emrn[rows] = {0};
+	kit = 0; G4double emkn[rows] = {0};
+
+
+	for(int i = 0; i < rows*(cols+1); i++){
+
+		if(i % 3 == 0){// col 0
+			emen[eit] = *(vals+i) * energyunit; 
+			eit++;
+		}
+
+		if((i+1) % 3 == 0){ // col 2
+			emkn[kit] = *(vals+i) * propertyunit1;
+			kit++;
+		}
+
+		if((i+2) % 3 == 0){ // col 1
+			emrn[nit] = *(vals+i) * propertyunit2;
+			nit++;
+		}
+	}
+
+	MPT->AddProperty(property1, 
+			emen, emrn, rows);
+	MPT->AddProperty(property2, 
+			emen, emkn, rows);
+	
 }

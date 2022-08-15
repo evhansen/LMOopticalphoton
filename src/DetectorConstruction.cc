@@ -34,6 +34,9 @@
 #include "DefMats.hh"
 #include "DefGeos.hh"
 
+
+#define a 0
+
 G4ThreadLocal
 
 
@@ -89,6 +92,12 @@ void DetectorConstruction::DefineMaterials()
 	char emat = readExtFile("./options/emat");
 	char crysmat = readExtFile("./options/crysmat");
 	//char arcmat = readExtFile("./options/arcmat");
+
+#if a
+	G4cout << "\nLD material: " << ldmat 
+	<< "\nEM material: " << emat 
+	<< "\nCrys material: " << crysmat << "\n" << G4endl;
+#endif
 	
 	// optical surface MPT (because of k -.-)
 	LDk = new G4MaterialPropertiesTable();
@@ -99,15 +108,30 @@ void DetectorConstruction::DefineMaterials()
 	//************
 	// Define Materials 
 	//************
-	
+
+#if a
+	G4cout << "\nDefining world materials.\n" << G4endl;
+#endif
 	DefineWorldM();	
 
+#if a
+	G4cout << "\nDefining crys materials.\n" << G4endl;
+#endif
 	DefineCrysM(crysmat);
 
+#if a
+	G4cout << "\nDefining LD materials.\n" << G4endl;
+#endif
 	DefineLDM(ldmat);
 
+#if a
+	G4cout << "\nDefining EM materials.\n" << G4endl;
+#endif
 	DefineEMM(emat);
 
+#if a
+	G4cout << "\nDefining ARC materials.\n" << G4endl;
+#endif
 	//DefineARCM();
 
 
@@ -116,9 +140,8 @@ void DetectorConstruction::DefineMaterials()
 	// *****************
 
 
+	// segfaults on *wo4?
 	G4cout << *(G4Material::GetMaterialTable()) << G4endl;
-
-
 }
 
 
@@ -148,7 +171,7 @@ G4VPhysicalVolume* DetectorConstruction::DefineWorld(){
 				"World",          // its name
 				0,                // its mother  volume
 				false,            // no boolean operation
-				900,                // copy number
+				100,                // copy number
 				fCheckOverlaps);  // checking overlaps
 
 
@@ -275,53 +298,53 @@ void DetectorConstruction::DefineVolumes()
 		IVPos[2] = LMOHalfSizes[2]; 
 	}
 
-	if(face2 == 'l'){ //LD
+	if(face2 == 'l'){ 
 		IVPos[5] = -(LDgap / 2) - LMOHalfSizes[2];
 
-	} else if(face2 == 'e'){ // EM
+	} else if(face2 == 'e'){ 
 		IVPos[5] = -(EMgap / 2) - LMOHalfSizes[2];
 
-	} else { //nothing
+	} else { 
 		IVPos[5] = - LMOHalfSizes[2];
 	}
 
-	if(face3 == 'l'){ //LD
+	if(face3 == 'l'){ 
 		IVPos[7] = -(LDgap / 2) - LMOHalfSizes[1]; 
 
-	} else if(face3 == 'e'){ // EM
+	} else if(face3 == 'e'){
 		IVPos[7] = -(EMgap / 2) - LMOHalfSizes[1]; 
 
-	} else { //nothing
+	} else { 
 		IVPos[7] = - LMOHalfSizes[1]; 
 	}
 
-	if(face4 == 'l'){ //LD
+	if(face4 == 'l'){ 
 		IVPos[10] = (LDgap / 2) + LMOHalfSizes[1];
 
-	} else if(face4 == 'e'){ // EM
+	} else if(face4 == 'e'){ 
 		IVPos[10] = (EMgap / 2) + LMOHalfSizes[1]; 
 
-	} else {//nothing
+	} else {
 		IVPos[10] = LMOHalfSizes[1]; 
 	}
 
-	if(face5 == 'l'){ //LD
+	if(face5 == 'l'){ 
 		IVPos[12] = -(LDgap / 2) - LMOHalfSizes[0]; 
 
-	} else if(face4 == 'e'){ // EM
+	} else if(face4 == 'e'){ 
 		IVPos[12] = -(EMgap / 2) - LMOHalfSizes[0];
 
-	} else { //nothing
+	} else { 
 		IVPos[12] = - LMOHalfSizes[0];
 	}
 
-	if(face6 == 'l'){ //LD
+	if(face6 == 'l'){ 
 		IVPos[15] = (LDgap / 2) + LMOHalfSizes[0];
 
-	} else if(face4 == 'e'){ // EM
+	} else if(face4 == 'e'){ 
 		IVPos[15] = (EMgap / 2) + LMOHalfSizes[0];
 
-	} else { //nothing
+	} else { 
 		IVPos[15] = LMOHalfSizes[0];
 	}
 
@@ -332,23 +355,35 @@ void DetectorConstruction::DefineVolumes()
 	// *****************
 
 
+#if a
+	G4cout << "\nDefining crys volumes.\n" << G4endl;
+#endif
 	G4VPhysicalVolume* fLMO1 = DefineCrys(LMOHalfSizes);
 	
 
 	G4VPhysicalVolume* IV1,*IV2,*IV3,*IV4,*IV5,*IV6;
 	
+#if a
+	G4cout << "\nDefining IV volumes.\n" << G4endl;
+#endif
 	DefineIV(IVHalfSizes,IVPos,
 				&IV1,&IV2,&IV3,&IV4,&IV5,&IV6);
 
 
 	G4VPhysicalVolume* LD1,*LD2,*LD3,*LD4,*LD5,*LD6;
 	
+#if a
+	G4cout << "\nDefining LD volumes.\n" << G4endl;
+#endif
 	DefineLD(LDHalfSizes,LDPos,
 				&LD1,&LD2,&LD3,&LD4,&LD5,&LD6);
 
 		
 	G4VPhysicalVolume* EM1,*EM2,*EM3,*EM4,*EM5,*EM6;
 	
+#if a
+	G4cout << "\nDefining EM volumes.\n" << G4endl;
+#endif
 	DefineEM(EMHalfSizes,EMPos,
 				&EM1,&EM2,&EM3,&EM4,&EM5,&EM6);
 
@@ -401,6 +436,10 @@ void DetectorConstruction::ConstructSDandField()
 	
 		G4cout << "LDs sensitive" << G4endl;
 	}
+
+
+	// for troubleshooting missing abs peak
+	SetSensitiveDetector("World",fLDSD);
 
 	
 	//not really necessary

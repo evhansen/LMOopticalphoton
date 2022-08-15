@@ -106,7 +106,7 @@ G4bool LightDetectorSD::ProcessHits(G4Step* step,
 	fHitsCollection->insert(OPhit);
 
 
-
+	// this even necessary? No idea
 	G4int snum = step->GetNumberOfSecondariesInCurrentStep();
 	if(snum == 0){return false;} //want this?
 	
