@@ -25,30 +25,36 @@
 (Including the licences and such in individual files drives me mad so here you go. Based on some example.)
 
 
-
 EM is encapsulatory material, e.g. aluminium reflectors.
 LD is light detector.
 ARC is antireflective coating.
 
-ROOT files saved to data/
-Flags set by files in options/ (I know, I know, I know, I know)
+ROOT files saved to data/.
+Flags set by files in options/ (I know, I know, I know, I know.).
+Material properties changed by files in options/mpt/ (note BOMs.).
 
 
-Main issue: muons getting stuck in crystal/ LD boundaries (when G4OpticalPhysics is registered -- fixed? OOM still kills with certain time segments.).
+Main issues: 
+	Muons getting stuck in crystal/ LD boundaries (when G4OpticalPhysics is registered -- fixed? OOM still kills with certain time segments.).
+	Dips in rindex (EM, whatnot) cause optical photon v > c exceptions.
+	Using *WO4 materials cause segfaults (at MaterialTable() print, etc.).
+	Cerenkov borked; stops writing to rootfiles.
+	Scintillation missing abs peak.
 
 
+Need:
+	PbWO4 birefringence.
+	Fix all of the derp flags .....
+	Change "lmo" to "crys" everywhere ... 
+	Add float crysd; // cubic crystal dimension (in mm)
+	Fix rootfile data (e.g. iMom is always primary's (seconds get 0,0,0).).
 
-TODO: fix all of the derp flags .....
-
-TODO: change "lmo" to "crys" everywhere ... teo2 is sad.
 
     char prng; // if 'c', C PRNG, otherwise G4 PRNG
 
     char lmos; 	// if e, LMO exists
    		// if s, LMO exists and is a sensitive detector 
 		// else, not
-
-TODO: float crysd; // cubic crystal dimension (in mm)
 
     float ldg;	// value of LD gap! (in mm)
     float emg;	// value of EM gap! (in mm)
@@ -65,10 +71,8 @@ TODO: float crysd; // cubic crystal dimension (in mm)
     char arcmat; // switch sio2, sio, and nb2o5 
 
 
-
-
-
-note, for troubleshooting:
+Note, for troubleshooting:
+	
 	options/misc
 		b: beta
 		g: gamma
@@ -81,6 +85,4 @@ note, for troubleshooting:
 
 
 
-note, iMom is always primary's (seconds get 0,0,0)
 
-TODO: fix scintillation, cerenkov

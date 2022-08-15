@@ -108,18 +108,19 @@ int main(int argc,char** argv)
   // new options broke scintillation?
   oPa->SetScintYieldFactor(1.0);
   oPa->SetScintExcitationRatio(0.0); // 1.0?
+  oPa->SetScintEnhancedTimeConstants(true);
   oPa->SetScintTrackSecondariesFirst(true);
-  //oPa->SetScintTrackInfo(true);
-  //oPa->SetScintStackPhotons(true);
 
-  //oPa->SetScintFiniteRiseTime(false);
-  oPa->SetScintEnhancedTimeConstants(false);
-  //oPa->SetScintByParticleType(false);
+  //oPa->SetScintTrackInfo(false);
+  oPa->SetScintStackPhotons(true);
+  oPa->SetScintFiniteRiseTime(false);
+  oPa->SetScintByParticleType(false);
 
  
   oPa->SetCerenkovMaxPhotonsPerStep(100);
   oPa->SetCerenkovMaxBetaChange(10.0);
   oPa->SetCerenkovTrackSecondariesFirst(true);
+  
   //oPa->SetCerenkovStackPhotons(true);
 
 
