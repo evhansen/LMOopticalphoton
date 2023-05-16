@@ -264,8 +264,4 @@ Mind that you do _not_ have to use these files at all! They're only there to mak
 
 See the images below for graphical representations of the functions:
 
-
-
-
-
-![Visual description of some of the classes and homemade includes.](./imgs/classes.jpeg)
+![Visual representation of some classes.](https://github.com/SporadicAnyonsInhabitGregariousAsylums/LMOopticalphoton/blob/ModularProj/imgs/classes.jpeg)
