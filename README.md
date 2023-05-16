@@ -100,13 +100,9 @@ TODOs / fixes:
 
 
 /////////////////
-
 // **************
-
 // Option files for the LMO runs
-
 // **************
-
 /////////////////
 
 
@@ -216,13 +212,9 @@ TODOs / fixes:
 
 
 /////////////////
-
 // **************
-
 // Option files for the Cocalib runs
-
 // **************
-
 /////////////////
 
 None -- geometry is fixed.
@@ -230,13 +222,9 @@ None -- geometry is fixed.
 
 
 /////////////////
-
 // **************
-
 // Option files for the TES module runs
-
 // **************
-
 /////////////////
 
 // DetectorConstruction //
@@ -302,13 +290,9 @@ None -- geometry is fixed.
 
 
 /////////////////
-
 // **************
-
 // Description of relevant homemade functions and structures
-
 // **************
-
 /////////////////
 
 
