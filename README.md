@@ -196,14 +196,14 @@ None -- geometry is fixed.
 	
 	in /options/TES_opticalfibre
 		h: horizontal fibres (at the moment, separate horizontal ones)
-![Image of horizontal fibre.](./imgs/f2.jpg)
+![Image of horizontal fibre.](https://github.com/SporadicAnyonsInhabitGregariousAsylums/LMOopticalphoton/blob/ModularProj/imgs/f2.JPG)
 		v: vertical fibres
-![Image of vertical fibre.](./imgs/f1.jpg)
+![Image of vertical fibre.](https://github.com/SporadicAnyonsInhabitGregariousAsylums/LMOopticalphoton/blob/ModularProj/imgs/f1.JPG)
 		else: no fibre at all, i.e. no generation!
 	Note that geometry details are in the documentation.
 
 	Note that fibres all have diffusion implemented.
-	![Diffusion length and power percentage image.](./imgs/diffusionfibreplot.jpg)
+	![Diffusion length and power percentage image.](https://github.com/SporadicAnyonsInhabitGregariousAsylums/LMOopticalphoton/blob/ModularProj/imgs/diffusionfibreplot.JPG)
 
 
 /////////////////
