@@ -1,0 +1,30 @@
+# Macro file for example B4
+
+#/process/optical/scintillation/setByParticleType false
+
+#/control/verbose 2
+#/tracking/verbose 2
+#/run/verbose 2
+#/process/optical/verbose 4
+#/geometry/navigator/verbose 4
+#/process/optical/scintillation/verbose 2
+#/process/optical/cerenkov/verbose 2
+
+#/control/cout/ignoreThreadsExcept 0
+
+/run/initialize
+
+/analysis/setFileName data/test
+
+/LDsensitive/gun/randomInLMO1 true
+/LDsensitive/gun/randomDirection true
+
+/vis/scene/endOfEventAction accumulate 2000
+/vis/viewer/set/upVector 0 0 1
+/vis/viewer/set/viewpointThetaPhi 70 40
+/vis/viewer/set/hiddenEdge 1
+
+/random/setSeeds 1 10
+/run/printProgress 100000
+/run/beamOn 1000
+#/run/beamOn 200
