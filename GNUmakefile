@@ -7,7 +7,7 @@ G4TARGET := $(name)
 G4EXLIB := true
 
 ifndef G4INSTALL
-  G4INSTALL = /home/evh32/Downloads/geant4.10.07/
+  G4INSTALL = /home/alarm/Downloads/geant4.10.07.p03-install/
 endif
 
 .PHONY: all

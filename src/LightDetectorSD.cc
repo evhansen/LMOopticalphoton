@@ -1,32 +1,3 @@
-//
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
-//
-//
-/// \file LightDetectorSD.cc
-/// \brief Implementation of the LightDetectorSD class
-
 #include "LightDetectorSD.hh"
 #include "G4HCofThisEvent.hh"
 #include "G4Step.hh"
@@ -34,114 +5,177 @@
 #include "G4SDManager.hh"
 #include "G4ios.hh"
 #include "G4VProcess.hh"
+#include "G4PrimaryParticle.hh"
+#include "G4RunManager.hh"
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+#include <stddef.h>
 
-LightDetectorSD::LightDetectorSD(
-                            const G4String& name,
-                            const G4String& hitsCollectionName,
-                            G4int nofCells)
+
+void populateHit(const G4Step* step, G4ParticleDefinition*& pdef,
+	G4double&edep, G4double&stepLength, G4double&energy,
+	G4ThreeVector&pos, G4ThreeVector&momdir,
+	G4int&pdg, G4int&copynum, G4int&eventid, G4int&trackid, G4int&parentid,
+	std::string&x, std::string&y, std::string&z, 
+	std::string&px, std::string&py, std::string&pz,
+	G4String& particlename, G4String& processname);
+void chkCols(std::string line,std::string&x,std::string&y,std::string&z,
+	std::string&px,std::string&py,std::string&pz);
+std::string getCol(std::string line, unsigned int col);
+std::string readExtFileLine(const char* filename);
+std::string readLast(const char* fname, G4int eid);
+
+
+
+LightDetectorSD::LightDetectorSD(const G4String& name,
+	const G4String& hitsCollectionName,G4int nofCells)
  : G4VSensitiveDetector(name),
    fHitsCollection(nullptr),
    fNofCells(nofCells)
 {
   collectionName.insert(hitsCollectionName);
-}
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+
+  // include PRE particle data here
+}
 
 LightDetectorSD::~LightDetectorSD()
 {
+	//std::string fname = "./data/" + readExtFileLine("./options/name");
+	//remove(fname.c_str());
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void LightDetectorSD::Initialize(G4HCofThisEvent* hce)
 {
   // Create hits collection
-  fHitsCollection
-    = new LightDetectorHitsCollection(SensitiveDetectorName, collectionName[0]);
+  fHitsCollection // LightDetectorHitsCollection
+	  //= new G4THitsCollection<LightDetectorHit>;
+	  = new LightDetectorHitsCollection(SensitiveDetectorName, collectionName[0]);
 
   // Add this collection in hce
   auto hcID
     = G4SDManager::GetSDMpointer()->GetCollectionID(collectionName[0]);
   hce->AddHitsCollection( hcID, fHitsCollection );
 
-  // Create hits
-  // fNofCells for cells + one more for total sums
-  // for (G4int i=0; i<fNofCells+1; i++ ) {
-  //   fHitsCollection->insert(new LightDetectorHit());
-  // }
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 G4bool LightDetectorSD::ProcessHits(G4Step* step,
                                      G4TouchableHistory*)
 {
-  // energy deposit
-  auto edep = step->GetTotalEnergyDeposit();
-  if(edep == 0.)
-    return false;  // No edep so don't count as hit
 
-  // step length
-  // G4double stepLength = 0.;
-  // if ( step->GetTrack()->GetDefinition()->GetPDGCharge() != 0. ) {
-  //   stepLength = step->GetStepLength();
-  // }
-  // if (stepLength == 0. )
-  //   return false; // No step length so don't count as hit
+	G4double edep, stepLength, energy;
+	G4ParticleDefinition* pdef;
+	G4ThreeVector pos, momdir;
+	G4int pdg, copynum, eventid, trackid, parentid;
+	G4String partname, procname;
+	std::string px,py,pz,x,y,z;
 
 
-
-  G4StepPoint* thePrePoint = step->GetPreStepPoint();
-  G4StepPoint* thePostPoint = step->GetPostStepPoint();
-
-  auto touchable = (step->GetPreStepPoint()->GetTouchable());
-  G4VPhysicalVolume* thePrePV = touchable->GetVolume();
-  G4int copyNumber = touchable->GetCopyNumber();
-  // G4cout<<"==> logical volume-> "<< thePrePV->GetLogicalVolume()->GetName() <<G4endl;
-  // G4cout<<"==> which copy -> "<< touchable->GetCopyNumber() <<G4endl;
+	populateHit(step, pdef,
+		edep, stepLength, energy,
+		pos, momdir,
+		pdg, copynum, eventid, trackid, parentid,
+		x,y,z,px,py,pz,
+		partname,procname);
 
 
-  G4ThreeVector pos = thePrePoint->GetPosition() + thePostPoint->GetPosition();
-  pos /= 2.;
+	if(edep == 0.){return false;}
+	if (stepLength == 0.) {return false;}
+ 
+ 
+	// populate hit
+	LightDetectorHit* OPhit = new LightDetectorHit();
+ 
+	OPhit->SetEdep(edep);
+	OPhit->SetEnergy(energy);
+  
+	OPhit->SetPDef(pdef);
+  
+	OPhit->SetPos(pos);
+	OPhit->SetfMom(momdir);
+
+	OPhit->SetPDG(pdg);
+	OPhit->SetPhysVolNum(copynum);
+	
+	OPhit->SetEventID(eventid);
+	OPhit->SetTrackID(trackid);
+	OPhit->SetParentID(parentid);
+
+	OPhit->SetParticleName(partname);
+	OPhit->SetProcessName(procname);
+
+	
+	// convert units m -> mm
+	//OPhit->SetiPos(G4ThreeVector(stof(x)*1000,stof(y)*1000,stof(z)*1000));	
+
+	//OPhit->SetiMom(G4ThreeVector(stof(px),stof(py),stof(pz)));
+
+	fHitsCollection->insert(OPhit);
 
 
-  // Get LightDetector cell id
-  // auto layerNumber = touchable->GetReplicaNumber(1);
-  //
-  // // Get hit accounting data for this cell
-  // auto hit = (*fHitsCollection)[layerNumber];
-  // if ( ! hit ) {
-  //   G4ExceptionDescription msg;
-  //   msg << "Cannot access hit " << layerNumber;
-  //   G4Exception("LightDetectorSD::ProcessHits()",
-  //     "MyCode0004", FatalException, msg);
-  // }
+	// this even necessary? No idea
+	G4int snum = step->GetNumberOfSecondariesInCurrentStep();
+	if(snum == 0){return false;} //want this?
+	
+	const std::vector<const G4Track*>* secs = step->GetSecondaryInCurrentStep();
 
-  // Get hit for total accounting
-  auto hitTotal
-    = (*fHitsCollection)[fHitsCollection->entries()];
+	LightDetectorHit** LDH = (LightDetectorHit**)malloc(snum*sizeof(LightDetectorHit*)); 
 
-  LightDetectorHit* OPhit = new LightDetectorHit(thePrePV);
+	//TODO: add primary vertices to event for secondaries
+	//G4Event* sevent = G4RunManager::GetRunManager()->GetCurrentEvent();
+  
+	for(G4int i = 0; i < snum; i++){
+	
+		const G4Step* sstep = (*secs)[i]->GetStep();
+		if(sstep == NULL){continue;}
+	
+		// track = (*secs)[i];
+		populateHit(sstep, pdef,
+			edep, stepLength, energy,
+			pos, momdir,
+			pdg, copynum, eventid, trackid, parentid,
+			x,y,z,px,py,pz,
+			partname,procname);
 
-  OPhit->SetEdep(edep);
-  OPhit->SetPhysVolNum(copyNumber);
-  OPhit->SetPos(pos);
-  // G4cout<<"pos-> "<<pos<<G4endl;
+
+		if(edep == 0.){continue;}  
+		if (stepLength == 0.) {continue;}
+
+		LDH[i] = new LightDetectorHit();
+ 
+		LDH[i]->SetEdep(edep);
+	  	LDH[i]->SetEnergy(energy);
+
+		LDH[i]->SetPDef(pdef);
+	  
+		LDH[i]->SetPos(pos);
+		LDH[i]->SetfMom(momdir);
+
+	  	LDH[i]->SetPDG(pdg);
+		LDH[i]->SetPhysVolNum(copynum);
+
+		LDH[i]->SetEventID(eventid);
+		LDH[i]->SetTrackID(trackid);
+		LDH[i]->SetParentID(parentid);
+
+		LDH[i]->SetParticleName(partname);
+		LDH[i]->SetProcessName(procname);
+
+		// convert units m -> mm
+		//LDH[i]->SetiPos(G4ThreeVector(stof(x)*1000,stof(y)*1000,stof(z)*1000));
+
+		//LDH[i]->SetiMom(G4ThreeVector(stof(px),stof(py),stof(pz)));
+
+		fHitsCollection->insert(LDH[i]);
+	}
 
 
-  fHitsCollection->insert(OPhit);
-
-  // Add values
-  // hit->Add(edep, stepLength);
-  // hitTotal->Add(edep, stepLength);
 
   return true;
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void LightDetectorSD::EndOfEvent(G4HCofThisEvent*)
 {
@@ -155,4 +189,172 @@ void LightDetectorSD::EndOfEvent(G4HCofThisEvent*)
   }
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+
+
+void populateHit(const G4Step* step,G4ParticleDefinition*& pdef,
+		G4double&edep, G4double&stepLength, G4double&energy,
+		G4ThreeVector&pos, G4ThreeVector&momdir,
+		G4int&pdg, G4int&copynum, G4int&eventid, G4int&trackid, G4int&parentid,
+		std::string&x, std::string&y, std::string&z, 
+		std::string&px, std::string&py, std::string&pz,
+		G4String& particlename, G4String& processname){
+
+	if(step == NULL){return;}
+	
+	edep = step->GetTotalEnergyDeposit();
+	stepLength = step->GetStepLength();
+
+	if(edep == 0.){return;}
+	if (stepLength == 0.) {return;}
+	
+	G4Track* track = step->GetTrack();
+	
+	//energy = track->GetDynamicParticle()->GetTotalEnergy();
+	energy = track->GetDynamicParticle()->GetKineticEnergy();
+
+	pdef = track->GetDefinition();
+
+	G4StepPoint* thePrePoint = step->GetPreStepPoint();
+	G4StepPoint* thePostPoint = step->GetPostStepPoint();
+
+	processname = thePostPoint->GetProcessDefinedStep()->GetProcessName();
+	particlename = pdef->GetParticleName();
+	
+	pos = (thePrePoint->GetPosition() + thePostPoint->GetPosition()) / 2.;
+	momdir = track->GetDynamicParticle()->GetMomentumDirection();
+
+	pdg = track->GetDynamicParticle()->GetPDGcode(); 
+	copynum = thePrePoint->GetTouchable()->GetCopyNumber();
+
+	eventid = -1;
+	
+	if(G4RunManager::GetRunManager()->GetCurrentEvent()){
+		eventid = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+	}
+
+	trackid = track->GetTrackID();
+	parentid = track->GetParentID();
+
+
+	// checking file
+	/* static std::string fname = "./data/" + readExtFileLine("./options/name");
+
+	std::string line;
+
+	x = "0";
+	y = "0";
+	z = "0";
+	px = "0";
+	py = "0";
+	pz = "0";
+
+
+	if((parentid == 0) && (eventid > -1)){
+	
+		line = readLast(fname.c_str(),eventid);
+
+		if(line != "no"){
+
+			// 0 is eventid
+			px = getCol(line,1);
+			py = getCol(line,2);
+			pz = getCol(line,3);
+			x = getCol(line,4);
+			y = getCol(line,5);
+			z = getCol(line,6);
+
+			chkCols(line,x,y,z,px,py,pz);
+		}
+	}
+	*/
+}
+
+
+void chkCols(std::string line,std::string&x,std::string&y,std::string&z,
+		std::string&px,std::string&py,std::string&pz){
+
+	if(px == "no" || py == "no" || pz == "no" || x == "no" || y == "no" || z == "no"){ 
+	
+		G4cout << "******************************* LINE ISSUE **************************\n" 
+			<< line << "\n"; 
+		G4cout << px <<":"<< py <<":"<< pz<<"\n";
+		G4cout << x <<":"<< y <<":"<< z<<"\n";
+		
+		px = "0";
+		py = "0";
+		pz = "0";
+		x = "0";
+		y = "0";
+		z = "0";
+	}
+}
+
+
+std::string getCol(std::string line, unsigned int col){
+
+	std::string sstr;
+
+	int b = 0; int e = line.find(",",0);
+	
+	if(col == 0){return line.substr(b,e);}
+
+	unsigned int iter = 1;
+	
+	while(b < line.length()){
+
+		b = e+1; e = line.find(",",b); 
+		
+		if(col == iter){return line.substr(b,e-b);}
+		
+		iter++;
+
+		if( b > e || b == e ) {break;}
+	}
+
+	return "no";
+}
+
+
+std::string readLast(const char* fname, G4int eid){
+	std::ifstream p;
+	std::string line;
+	std::string event;
+
+	p.open(fname);
+
+	char ch = '0';
+	p.seekg(-1,std::ios_base::end);
+
+	int loc = -1;
+
+	while((p.tellg() > 1)) {
+	
+		while(ch != '\n'){
+			p.get(ch); 
+			--loc; 
+			p.seekg(loc,std::ios_base::end); 
+			p.get(ch);
+		}
+
+		getline(p,line);
+ 
+	 	event = line.substr(0,line.find(","));
+
+		if(atoi(event.c_str()) == eid){ return line;}
+
+		--loc;		
+		p.seekg(loc,std::ios_base::end);
+		p.get(ch);
+	}
+	
+
+	p.close();
+
+	return "no";
+}
+
+
+
+
+

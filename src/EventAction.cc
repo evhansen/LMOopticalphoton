@@ -1,156 +1,252 @@
-//
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
-//
-//
-/// \file EventAction.cc
-/// \brief Implementation of the EventAction class
-
 #include "EventAction.hh"
-#include "LightDetectorSD.hh"
+
+//#include "LightDetectorSD.hh"
+//#include "ELightDetectorSD.hh"
 #include "LightDetectorHit.hh"
 #include "Analysis.hh"
-
 #include "G4RunManager.hh"
 #include "G4Event.hh"
 #include "G4SDManager.hh"
 #include "G4HCofThisEvent.hh"
 #include "G4UnitsTable.hh"
-
 #include "Randomize.hh"
 #include <iomanip>
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+#include "G4SystemOfUnits.hh"
+#include "G4ParticleDefinition.hh"
+#include "G4Electron.hh"
+#include "G4Alpha.hh"
+#include "G4Positron.hh"
+#include "G4MuonMinus.hh"
+#include "G4MuonPlus.hh"
+#include "G4Gamma.hh"
+#include "G4OpticalPhoton.hh"
+
+
+static int ParticleID(const G4ParticleDefinition* pd, G4String pn);
+static int ProcessID(const G4String name);
+
+
 
 EventAction::EventAction()
- : G4UserEventAction()
-   ,fAbsHCID(-1)
-   // ,fGapHCID(-1)
+: G4UserEventAction()
+,fAbsHCID(-1)
+,fHCID(-1)
 {}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 EventAction::~EventAction()
 {}
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 LightDetectorHitsCollection*
 EventAction::GetHitsCollection(G4int hcID,
-                                  const G4Event* event) const
+const G4Event* event) const
 {
-  auto hitsCollection
-    = static_cast<LightDetectorHitsCollection*>(
-        event->GetHCofThisEvent()->GetHC(hcID));
 
-  if ( ! hitsCollection ) {
-    G4ExceptionDescription msg;
-    msg << "Cannot access hitsCollection ID " << hcID;
-    G4Exception("EventAction::GetHitsCollection()",
-      "MyCode0003", FatalException, msg);
-  }
-
-
-  return hitsCollection;
+	auto hitsCollection
+	= static_cast<LightDetectorHitsCollection*>(
+	event->GetHCofThisEvent()->GetHC(hcID));
+		
+	if ( ! hitsCollection ) {
+		G4ExceptionDescription msg;
+		msg << "Cannot access hitsCollection ID " << hcID;
+		G4Exception("EventAction::GetHitsCollection()",
+		"MyCode0003", FatalException, msg);
+	}
+	
+	return hitsCollection;
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void EventAction::PrintEventStatistics(
-                              G4double absoEdep//, G4double absoTrackLength
-                              // , G4double gapEdep, G4double gapTrackLength
-                            ) const
+G4double absoEdep//, G4double absoTrackLength
+) const
 {
-  // print event statistics
-  G4cout
-     << "   Absorber: total energy: "
-     << std::setw(7) << G4BestUnit(absoEdep, "Energy")
-     // << "       total track length: "
-     // << std::setw(7) << G4BestUnit(absoTrackLength, "Length")
-     << G4endl;
-
+	G4cout
+	<< "   Absorber: total energy: "
+	<< std::setw(7) << G4BestUnit(absoEdep, "Energy")
+	<< G4endl;
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-void EventAction::BeginOfEventAction(const G4Event* /*event*/)
-{}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+void EventAction::BeginOfEventAction(const G4Event*)
+{
+}
 
 void EventAction::EndOfEventAction(const G4Event* event)
 {
 
-  // Get hits collections IDs (only once)
-  if ( fAbsHCID == -1 ) {
-    fAbsHCID
-      = G4SDManager::GetSDMpointer()->GetCollectionID("AbsorberHitsCollection");
+	if ( fHCID == -1 ) {
+		fHCID = G4SDManager::GetSDMpointer()->
+			GetCollectionID("HitsCollection");
+	}
 
-    // fGapHCID
-    //   = G4SDManager::GetSDMpointer()->GetCollectionID("GapHitsCollection");
-  }
+	if ( fAbsHCID == -1 ) {
+		fAbsHCID = G4SDManager::GetSDMpointer()->
+			GetCollectionID("AbsorberHitsCollection");
+	}
 
-  // Get hits collections
-  auto absoHC = GetHitsCollection(fAbsHCID, event);
+	/////////////////
+	// From the regular sensitive detectors
+	/////////////////
+	LightDetectorHitsCollection* soHC 
+		= GetHitsCollection(fHCID, event);
+	
+	/////////////////
+	// From the absorber sensitive detectors
+	/////////////////
+	LightDetectorHitsCollection* absoHC 
+		= GetHitsCollection(fAbsHCID, event);
 
-  // auto gapHC = GetHitsCollection(fGapHCID, event);
+	auto analysisManager = G4AnalysisManager::Instance();
+
+	
+	
+
+	//for(int i = 0; i < soHC->entries(); i++){
+	//	LightDetectorHit* absoHit = (*soHC)[i];
+
+	for(int i = 0; i < absoHC->entries() + soHC->entries(); i++){
+
+		LightDetectorHit* absoHit;
+	
+		if(i<absoHC->entries()){
+			absoHit = (*absoHC)[i];
+		}else{
+			absoHit = (*soHC)[i-absoHC->entries()];
+		}
+
+		// need to ditch things that have ridiculous energies, 
+		// so particles from weird procs that don't make sense
+		if(ParticleID(absoHit->GetPDef(),absoHit->GetParticleName()) == 0){
+
+			std::string write = "Testing: " + std::to_string(absoHit->GetEnergy()) +
+				std::to_string(absoHit->GetEdep()) +
+				std::to_string(absoHit->GetPhysVolNum()) +
+				std::to_string(absoHit->GetxiPos()) +
+				std::to_string(absoHit->GetyiPos()) +
+				std::to_string(absoHit->GetziPos()) +
+				std::to_string(absoHit->GetxfPos()) +
+				std::to_string(absoHit->GetyfPos()) +
+				std::to_string(absoHit->GetzfPos()) +
+				std::to_string(event->GetPrimaryVertex(0)->GetPosition().getX()) +
+				std::to_string(event->GetPrimaryVertex(0)->GetPosition().getY()) +
+				std::to_string(event->GetPrimaryVertex(0)->GetPosition().getZ()) +
+				std::to_string(ParticleID(absoHit->GetPDef(),absoHit->GetParticleName())) +
+				std::to_string(ProcessID(absoHit->GetProcessName())) +
+				std::to_string(absoHit->GetxiMom()) +
+				std::to_string(absoHit->GetyiMom()) +
+				std::to_string(absoHit->GetziMom()) +
+				std::to_string(absoHit->GetxfMom()) +
+				std::to_string(absoHit->GetyfMom()) +
+				std::to_string(absoHit->GetzfMom()) +
+				std::to_string(absoHit->GetEventID()) +
+				std::to_string(absoHit->GetTrackID()) +
+				std::to_string(absoHit->GetParentID()) + "\n";
+
+				G4cout << write << G4endl;
+		}	
+
+		analysisManager->FillNtupleFColumn(0, absoHit->GetEnergy());
+	
+		analysisManager->FillNtupleDColumn(1, absoHit->GetEdep());
+	
+		analysisManager->FillNtupleIColumn(2, absoHit->GetPhysVolNum());
+
+		analysisManager->FillNtupleFColumn(3, absoHit->GetxiPos());
+		analysisManager->FillNtupleFColumn(4, absoHit->GetyiPos());
+		analysisManager->FillNtupleFColumn(5, absoHit->GetziPos());
+
+		analysisManager->FillNtupleFColumn(6, absoHit->GetxfPos());
+		analysisManager->FillNtupleFColumn(7, absoHit->GetyfPos());
+		analysisManager->FillNtupleFColumn(8, absoHit->GetzfPos());	
+
+		analysisManager->FillNtupleFColumn(9, event->GetPrimaryVertex(0)->GetPosition().getX());
+		analysisManager->FillNtupleFColumn(10, event->GetPrimaryVertex(0)->GetPosition().getY());
+		analysisManager->FillNtupleFColumn(11, event->GetPrimaryVertex(0)->GetPosition().getZ());
+	
+		analysisManager->FillNtupleIColumn(12, ParticleID(absoHit->GetPDef(),absoHit->GetParticleName()));
+		analysisManager->FillNtupleIColumn(13, ProcessID(absoHit->GetProcessName()));
+		
+		analysisManager->FillNtupleFColumn(14, absoHit->GetxiMom());
+		analysisManager->FillNtupleFColumn(15, absoHit->GetyiMom());
+		analysisManager->FillNtupleFColumn(16, absoHit->GetziMom());
+
+		analysisManager->FillNtupleFColumn(17, absoHit->GetxfMom());
+		analysisManager->FillNtupleFColumn(18, absoHit->GetyfMom());
+		analysisManager->FillNtupleFColumn(19, absoHit->GetzfMom());
+
+		analysisManager->FillNtupleIColumn(20, absoHit->GetEventID());
+		analysisManager->FillNtupleIColumn(21, absoHit->GetTrackID());
+		analysisManager->FillNtupleIColumn(22, absoHit->GetParentID());
 
 
-  G4int nofHits = absoHC->entries();
-  auto eventID = event->GetEventID();
-
-  for(int i=0; i<nofHits; i++){
-
-    // Get hit with total values
-    auto absoHit = (*absoHC)[i];
-    // auto gapHit = (*gapHC)[gapHC->entries()-1];
-
-
-
-    // get analysis manager
-    auto analysisManager = G4AnalysisManager::Instance();
-
-    // fill histograms
-    // analysisManager->FillH1(0, absoHit->GetEdep());
-    // analysisManager->FillH1(2, absoHit->GetTrackLength());
-
-    // fill ntuple
-    analysisManager->FillNtupleDColumn(0, absoHit->GetEdep());
-    analysisManager->FillNtupleIColumn(1, absoHit->GetPhysVolNum());
-    // analysisManager->FillNtupleDColumn(2, absoHit->GetPosition()->GetX());
-
-    // analysisManager->FillNtupleDColumn(2, absoHit->GetTrackLength());
-    analysisManager->AddNtupleRow();
-
-    // auto printModulo = G4RunManager::GetRunManager()->GetPrintProgress();
-    // if ( ( printModulo > 0 ) && ( eventID % printModulo == 0 ) ) {
-    //   PrintEventStatistics(
-    //     absoHit->GetEdep()
-    //     //, absoHit->GetTrackLength()
-      // );
-    // }
-  }
+		//G4cout << "TESTING: " << absoHit->GetParticleName() << "\n" << absoHit->GetProcessName() << "\n" << G4endl; 
+		
+		analysisManager->AddNtupleRow();
+	}
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+
+
+
+static int ParticleID(const G4ParticleDefinition* pd, G4String pn){
+	if(pd == G4Electron::Definition()){
+		return -11;
+	} else if(pd == G4Alpha::Definition()){
+		return 12;
+	} else if(pd == G4Positron::Definition()){
+		return 11;
+	} else if(pd == G4MuonMinus::Definition()){
+		return -13;
+	} else if(pd == G4MuonPlus::Definition()){
+		return 13;
+	} else if(pd == G4Gamma::Definition()){
+		return 22;
+	} else if(pd == G4OpticalPhoton::Definition()){
+		return -22;
+	}
+
+	if(pn.empty()){return -1;}
+	
+	if(pn == "e-"){
+		return -11;
+	} else if(pn == "e+"){
+		return 11;
+	} else if(pn == "gamma"){
+		return 22;
+	} else if(pn == "opticalphoton"){
+		return -22;
+	}
+
+	//G4cout << "WARNING: " << pd->GetParticleName() << "\n" << G4endl; 
+	G4cout << "WARNING: " << pn << "\n" << G4endl; 
+	
+	G4cout << "WARNING: ParticleID.\n" << G4endl; 
+	
+	return 0;		 
+}
+
+static int ProcessID(const G4String name){
+	if(name == "msc"){ // e-
+		return 1;
+	} else if(name == "eIoni"){ // e-
+		return 2;
+	} else if(name == "eBrem"){ // e-
+		return 3;
+	} else if(name == "OpAbsorption"){ //OP
+		return 11;
+	} else if(name == "compt"){ // gamma
+		return 21;
+	} else if(name == "phot"){ // gamma
+		return 22;
+	} else if(name == "Transportation") {
+		return 31;
+	}
+
+	if(name.empty()){return -1;}
+
+	G4cout << "WARNING: " << name << "\n" << G4endl; 
+	G4cout << "WARNING: ProcessID.\n" << G4endl; 
+
+	return 0;		 
+}
+

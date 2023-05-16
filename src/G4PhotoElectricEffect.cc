@@ -23,36 +23,72 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-/// \file optical/OpNovice2/include/HistoManager.hh
-/// \brief Definition of the HistoManager class
 //
 //
+//------------------ G4PhotoElectricEffect physics process ---------------------
+//                   by Michel Maire, 24 May 1996
 //
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+// Modified by Michel Maire and Vladimir Ivanchenko
+//
+// -----------------------------------------------------------------------------
 
-#ifndef HistoManager_h
-#define HistoManager_h 1
-
-#include "globals.hh"
-
-#include "g4root.hh"
-//#include "g4xml.hh"
-//#include "g4csv.hh"
+#include "G4PhotoElectricEffect.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4PEEffectFluoModel.hh"
+#include "G4Electron.hh"
+#include "G4EmParameters.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-class HistoManager
+using namespace std;
+
+G4PhotoElectricEffect::G4PhotoElectricEffect(const G4String& processName,
+  G4ProcessType type):G4VEmProcess (processName, type),
+    isInitialised(false)
 {
- public:
-  HistoManager();
-  ~HistoManager();
-
- private:
-  void Book();
-  G4String fFileName;
-};
+  SetBuildTableFlag(false);
+  SetSecondaryParticle(G4Electron::Electron());
+  SetProcessSubType(fPhotoElectricEffect);
+  SetMinKinEnergyPrim(200*keV);
+}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-#endif
+G4PhotoElectricEffect::~G4PhotoElectricEffect()
+{}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
+
+G4bool G4PhotoElectricEffect::IsApplicable(const G4ParticleDefinition& p)
+{
+  return (&p == G4Gamma::Gamma());
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+void G4PhotoElectricEffect::InitialiseProcess(const G4ParticleDefinition*)
+{
+  if(!isInitialised) {
+    isInitialised = true;
+    if(!EmModel()) { SetEmModel(new G4PEEffectFluoModel()); }
+    G4EmParameters* param = G4EmParameters::Instance();
+    EmModel()->SetLowEnergyLimit(param->MinKinEnergy());
+    EmModel()->SetHighEnergyLimit(param->MaxKinEnergy());
+    AddEmModel(1, EmModel());
+  }
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+void G4PhotoElectricEffect::PrintInfo()
+{}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+void G4PhotoElectricEffect::ProcessDescription(std::ostream& out) const
+{
+  out << "  Photoelectric effect";
+  G4VEmProcess::ProcessDescription(out);
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

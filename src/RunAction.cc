@@ -1,136 +1,82 @@
-//
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
-//
-//
-/// \file RunAction.cc
-/// \brief Implementation of the RunAction class
-
 #include "RunAction.hh"
 #include "Analysis.hh"
-
 #include "G4Run.hh"
 #include "G4RunManager.hh"
 #include "G4UnitsTable.hh"
 #include "G4SystemOfUnits.hh"
-#include "G4OpBoundaryProcess.hh"
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+//#include "G4OpBoundaryProcess.hh"
 
 RunAction::RunAction()
- : G4UserRunAction()
+: G4UserRunAction()
 {
-  // set printing event number per each event
-  G4RunManager::GetRunManager()->SetPrintProgress(1);
+	G4RunManager::GetRunManager()->SetPrintProgress(1);
+	auto analysisManager = G4AnalysisManager::Instance();
+	
+	G4cout << "Using " << analysisManager->GetType() << G4endl;
+	
+	analysisManager->SetVerboseLevel(1);
+	
+	// G4Exception: merging ntuples not applicable in sequential application
+	//analysisManager->SetNtupleMerging(true);
 
-  // Create analysis manager
-  // The choice of analysis technology is done via selectin of a namespace
-  // in Analysis.hh
-  auto analysisManager = G4AnalysisManager::Instance();
-  G4cout << "Using " << analysisManager->GetType() << G4endl;
+	//https://geant4.web.cern.ch/sites/default/files/geant4/collaboration/working_groups/electromagnetic/gallery/units/SystemOfUnits.html
 
-  // Create directories
-  //analysisManager->SetHistoDirectoryName("histograms");
-  //analysisManager->SetNtupleDirectoryName("ntuple");
-  analysisManager->SetVerboseLevel(1);
-  analysisManager->SetNtupleMerging(true);
-    // Note: merging ntuples is available only with Root output
+	analysisManager->CreateNtuple("LDHit", "Edep, SD, and Position");
+	
+	analysisManager->CreateNtupleFColumn("iEnergyMeV"); 
+	
+	analysisManager->CreateNtupleDColumn("EabsMeV");
+ 
+	analysisManager->CreateNtupleIColumn("PhysVolNum"); 
 
-  // Book histograms, ntuple
-  //
+	analysisManager->CreateNtupleFColumn("xiPosmm"); 
+	analysisManager->CreateNtupleFColumn("yiPosmm"); 
+	analysisManager->CreateNtupleFColumn("ziPosmm"); 
 
-  // Creating histograms
-  analysisManager->CreateH1("Eabs","Edep in absorber", 100, 0., 5*eV);
-  analysisManager->CreateH1("PhysVolNum","Which LD is hit", 30, 0., 30);
-  // analysisManager->CreateH1("Xabs","X location in absorber",)
-  // analysisManager->CreateH1("Labs","trackL in absorber", 100, 0., 1*m);
+	// hit class
+	analysisManager->CreateNtupleFColumn("xfPoshmm"); 
+	analysisManager->CreateNtupleFColumn("yfPoshmm"); 
+	analysisManager->CreateNtupleFColumn("zfPoshmm"); 
+	
+	// from event primary vertex
+	analysisManager->CreateNtupleFColumn("xiPosPVmm"); 
+	analysisManager->CreateNtupleFColumn("yiPosPVmm"); 
+	analysisManager->CreateNtupleFColumn("ziPosPVmm"); 
 
-  // Creating ntuple
-  //
-  analysisManager->CreateNtuple("LDHit", "Edep and Position");
-  analysisManager->CreateNtupleDColumn("Eabs"); // 0
-  analysisManager->CreateNtupleIColumn("PhysVolNum"); // 1
-  analysisManager->CreateNtupleDColumn("Pos"); // 2
-  analysisManager->FinishNtuple();
+	analysisManager->CreateNtupleIColumn("ParticleID"); 
+	analysisManager->CreateNtupleIColumn("ProcessID"); 
+
+	analysisManager->CreateNtupleFColumn("xiMom"); 
+	analysisManager->CreateNtupleFColumn("yiMom"); 
+	analysisManager->CreateNtupleFColumn("ziMom"); 
+
+	analysisManager->CreateNtupleFColumn("xfMom"); 
+	analysisManager->CreateNtupleFColumn("yfMom"); 
+	analysisManager->CreateNtupleFColumn("zfMom"); 
+
+	analysisManager->CreateNtupleIColumn("EventID"); 
+	analysisManager->CreateNtupleIColumn("TrackID"); 
+	analysisManager->CreateNtupleIColumn("ParentID"); 
+	
+
+	analysisManager->FinishNtuple();
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 RunAction::~RunAction()
 {
-  delete G4AnalysisManager::Instance();
+	delete G4AnalysisManager::Instance();
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void RunAction::BeginOfRunAction(const G4Run* /*run*/)
 {
-  //inform the runManager to save random number seed
-  //G4RunManager::GetRunManager()->SetRandomNumberStore(true);
-
-  // Get analysis manager
-  auto analysisManager = G4AnalysisManager::Instance();
-
-  // Open an output file
-  //
-  G4String fileName = "";
-  analysisManager->OpenFile(fileName);
+	auto analysisManager = G4AnalysisManager::Instance();
+	G4String fileName = "";
+	analysisManager->OpenFile(fileName);
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void RunAction::EndOfRunAction(const G4Run* /*run*/)
 {
-  // print histogram statistics
-  //
-  auto analysisManager = G4AnalysisManager::Instance();
-  if ( analysisManager->GetH1(0) ) {
-    G4cout << G4endl << " ----> print histograms statistic ";
-    if(isMaster) {
-      G4cout << "for the entire run " << G4endl << G4endl;
-    }
-    else {
-      G4cout << "for the local thread " << G4endl << G4endl;
-    }
-
-    G4cout << " EAbs : mean = "
-       << G4BestUnit(analysisManager->GetH1(0)->mean(), "Energy")
-       << " count = "
-       << analysisManager->GetH1(0)->entries() << G4endl;
-
-    // G4cout << " LAbs : mean = "
-    //   << G4BestUnit(analysisManager->GetH1(2)->mean(), "Length")
-    //   << " rms = "
-    //   << G4BestUnit(analysisManager->GetH1(2)->rms(),  "Length") << G4endl;
-
-
-  }
-
-  // save histograms & ntuple
-  //
-  analysisManager->Write();
-  analysisManager->CloseFile();
+	auto analysisManager = G4AnalysisManager::Instance();
+	analysisManager->Write();
+	analysisManager->CloseFile();
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
