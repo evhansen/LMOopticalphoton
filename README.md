@@ -287,6 +287,7 @@ None -- geometry is fixed.
 	Note that geometry details are in the documentation.
 
 	Note that fibres all have diffusion implemented.
+	
 	![Diffusion length and power percentage image.](https://github.com/SporadicAnyonsInhabitGregariousAsylums/LMOopticalphoton/blob/ModularProj/imgs/diffusionfibreplot.JPG)
 
 
@@ -306,65 +307,65 @@ There are three main includes in this vein, that aren't G4 classes:
 	DefSrcs.hh -- defines the sources for the runs
 	
 	
-	DefMats isn't used in a special way really, just define the functions you want in the appropriate header (probably in DetectorConstruction.hh) and you can throw your function into this file.
+DefMats isn't used in a special way really, just define the functions you want in the appropriate header (probably in DetectorConstruction.hh) and you can throw your function into this file.
 	
 	
-	DefGeos isn't used in a special way either. Similar to DefMats.
+DefGeos isn't used in a special way either. Similar to DefMats.
 	
 	
-	* DefSrcs _is_ used in a special way. You do not have to use it or its functions though. :)
+* DefSrcs _is_ used in a special way. You do not have to use it or its functions though. :)
 	
 	
-		First, we define the "process" (the particles generated) then we define the "source" (or we use one of the predefined functions available) and that's it! Let's start with the "source" function.
+First, we define the "process" (the particles generated) then we define the "source" (or we use one of the predefined functions available) and that's it! Let's start with the "source" function.
 		
 		
-		The "source" function will look (something) like:
+The "source" function will look (something) like:
 				
-				void PrimaryGeneratorAction::SOURCE_NAME(
+		void PrimaryGeneratorAction::SOURCE_NAME(
 					
-					G4int tot, G4int num,
+			G4int tot, G4int num,
 					
-					G4double PSHalfSizes[],G4double PSPos[], 
+			G4double PSHalfSizes[],G4double PSPos[], 
 					
-					void(*Process)(float[], float[], G4Event*, G4ParticleGun*, char),
+			void(*Process)(float[], float[], G4Event*, G4ParticleGun*, char),
 					
-					G4Event* anEvent, char swch)
+			G4Event* anEvent, char swch)
 	
 	
-		SOURCE_NAME is taken from a rectangle source but with a little bit of modification, we can create lots of other geometries (see DefSrcs.hh for an example of a circular source). 
+SOURCE_NAME is taken from a rectangle source but with a little bit of modification, we can create lots of other geometries (see DefSrcs.hh for an example of a circular source). 
 
 
-		For such, we pass PSHalfSizes to delineate the halfsizes for the source (so half the lengths of the sides of the abstract rectangle in which we will generate particles). 
+For such, we pass PSHalfSizes to delineate the halfsizes for the source (so half the lengths of the sides of the abstract rectangle in which we will generate particles). 
 
 
-		We pass PSPos to set the coordinate of the centre of our rectangle.
+We pass PSPos to set the coordinate of the centre of our rectangle.
 
 
-		Note that void(*Process)(float[], float[], G4Event*, G4ParticleGun*, char) looks a lot like a function -- it is! We pass a function pointer to our "process" function (PROCESS_NAME below) to be used in SOURCE_NAME. So we can swap out PROCESS_NAME easily to change the type of particles generated, how they're generated, etc. :)
+Note that void(*Process)(float[], float[], G4Event*, G4ParticleGun*, char) looks a lot like a function -- it is! We pass a function pointer to our "process" function (PROCESS_NAME below) to be used in SOURCE_NAME. So we can swap out PROCESS_NAME easily to change the type of particles generated, how they're generated, etc. :)
 
 
-		We pass anEvent from our main PrimaryActionGenerator function.
+We pass anEvent from our main PrimaryActionGenerator function.
 
 
-		We can optionally pass a character: swch. That's for if we have a option file read somewhere in PrimaryActionGenerator that influences either SOURCE_NAME or PROCESS_NAME. It's absolutely not necessary.
+We can optionally pass a character: swch. That's for if we have a option file read somewhere in PrimaryActionGenerator that influences either SOURCE_NAME or PROCESS_NAME. It's absolutely not necessary.
 
 
-		Now most importantly we have the two G4ints: tot and num. tot is the "total number of decays" for that event and num is the "total number of particles [per decay]". We use this to compute the initial positions and momenta for each particle that we generate -- we have num * 3 positions / momenta (so num particles, each with an x, y, z position / momenta) and we iterate over the computation of said positons and momenta tot times. Effectively we generate tot * num number of particles, just allowing for num to have different proportions of different particles!
+Now most importantly we have the two G4ints: tot and num. tot is the "total number of decays" for that event and num is the "total number of particles [per decay]". We use this to compute the initial positions and momenta for each particle that we generate -- we have num * 3 positions / momenta (so num particles, each with an x, y, z position / momenta) and we iterate over the computation of said positons and momenta tot times. Effectively we generate tot * num number of particles, just allowing for num to have different proportions of different particles!
 			
 		
-		The "process" function will look like:
+The "process" function will look like:
 				
-				void PrimaryGeneratorAction::PROCESS_NAME(
+		void PrimaryGeneratorAction::PROCESS_NAME(
 					
-					float ConstituentPos[], float ConstituentDir[],
+			float ConstituentPos[], float ConstituentDir[],
 					
-					G4Event* anEvent, G4ParticleGun*PG, char swch)
+			G4Event* anEvent, G4ParticleGun*PG, char swch)
 					
 					
-		Here ConstituentPos[],  ConstituentDir[], anEvent, PG, and swch are all passed to PROCESS_NAME by you and the source function. 
+Here ConstituentPos[],  ConstituentDir[], anEvent, PG, and swch are all passed to PROCESS_NAME by you and the source function. 
 	
 	
-		More importantly here are ConstituentPos and ConstituentDir -- these are the starting positions and momenta of the particle(s) generated. They are computed in SOURCE_NAME then passed to PROCESS_NAME to use when generating. 
+More importantly here are ConstituentPos and ConstituentDir -- these are the starting positions and momenta of the particle(s) generated. They are computed in SOURCE_NAME then passed to PROCESS_NAME to use when generating. 
 
 			
 Mind that you do _not_ have to use these files at all! They're only there to make the files shorter, more readable, and make it easier to build simulations!
