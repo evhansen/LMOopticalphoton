@@ -3,6 +3,7 @@
 
 Note: hardware troubles, so the repo is _not_ in a polished state currently.
 
+In order to swap between projects, need to manually move the DetectorConstructions and PrimaryGeneratorActions into src/ (and move the other ones out) for right now.
 
 Compiled with geant4.10.7.p03 (not yet tested with "geant4.10.7.03").
 
