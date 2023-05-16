@@ -196,14 +196,14 @@ None -- geometry is fixed.
 	
 	in /options/TES_opticalfibre
 		h: horizontal fibres (at the moment, separate horizontal ones)
-![Image of horizontal fibre.](imgs/f2.jpg)
+![Image of horizontal fibre.](./imgs/f2.jpg)
 		v: vertical fibres
-![Image of vertical fibre.](imgs/f1.jpg)
+![Image of vertical fibre.](./imgs/f1.jpg)
 		else: no fibre at all, i.e. no generation!
 	Note that geometry details are in the documentation.
 
 	Note that fibres all have diffusion implemented.
-	![Diffusion length and power percentage image.](imgs/diffusionfibreplot.jpg)
+	![Diffusion length and power percentage image.](./imgs/diffusionfibreplot.jpg)
 
 
 /////////////////
@@ -268,4 +268,4 @@ See the images below for graphical representations of the functions:
 
 
 
-![Visual description of some of the classes and homemade includes.](classes.jpeg)
+![Visual description of some of the classes and homemade includes.](./imgs/classes.jpeg)
